@@ -1,0 +1,13 @@
+# Editor/OS files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Node modules (jika nanti menggunakan npm)
+node_modules/
+package-lock.json
+
+# Build output
+dist/
+build/

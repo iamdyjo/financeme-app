@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>FinanceMe</title>
+  
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#F7F7F7">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="FinanceMe">
+  <link rel="apple-touch-icon" href="icon-192.svg">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- Feather Icons -->
+  <script src="https://unpkg.com/feather-icons"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- SheetJS -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<div id="toast-container" aria-live="polite"></div>
+
+<div id="app-container">
+
+  <!-- TOP BAR -->
+  <header class="top-bar">
+    <div class="user-greeting">
+      <p id="month-label">Juli 2026</p>
+      <h1>Halo, User</h1>
+    </div>
+    <div class="user-avatar" id="btn-pengaturan">
+      <i data-feather="user"></i>
+    </div>
+  </header>
+
+  <!-- PAGES -->
+  <main id="pages-container">
+
+    <!-- ── DASHBOARD ── -->
+    <section id="page-dashboard" class="page">
+      <div class="card balance-card">
+        <span class="balance-label">Total Saldo</span>
+        <h2 class="balance-amount" id="stat-saldo">Rp 0</h2>
+        
+        <div class="quick-actions">
+          <button class="action-btn" id="btn-add-trx-in">
+            <div class="action-icon" style="color: var(--income)"><i data-feather="arrow-down-left"></i></div>
+            <span class="action-label">Masuk</span>
+          </button>
+          <button class="action-btn" id="btn-add-trx-out">
+            <div class="action-icon" style="color: var(--expense)"><i data-feather="arrow-up-right"></i></div>
+            <span class="action-label">Keluar</span>
+          </button>
+          <button class="action-btn" id="btn-nav-budget">
+            <div class="action-icon"><i data-feather="pie-chart"></i></div>
+            <span class="action-label">Budget</span>
+          </button>
+          <button class="action-btn" id="btn-nav-kategori">
+            <div class="action-icon"><i data-feather="grid"></i></div>
+            <span class="action-label">Kategori</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card" style="padding: 16px; text-align: center;">
+          <span style="font-size: 12px; font-weight: 600; color: var(--text-3); text-transform: uppercase;">Pemasukan</span>
+          <p id="stat-pemasukan" style="font-weight: 700; color: var(--income); margin-top: 4px;">Rp 0</p>
+        </div>
+        <div class="card" style="padding: 16px; text-align: center;">
+          <span style="font-size: 12px; font-weight: 600; color: var(--text-3); text-transform: uppercase;">Pengeluaran</span>
+          <p id="stat-pengeluaran" style="font-weight: 700; color: var(--text-1); margin-top: 4px;">Rp 0</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3>Transaksi Terbaru</h3>
+          <a href="#" class="nav-link" data-page="transaksi" style="font-size: 14px; color: var(--text-3);">Lihat semua</a>
+        </div>
+        <div id="recent-list"></div>
+      </div>
+      
+      <div class="card">
+        <div class="card-header">
+          <h3>Komposisi Pengeluaran</h3>
+        </div>
+        <div style="position: relative; height: 200px; width: 100%;">
+          <canvas id="chart-donut"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── TRANSAKSI ── -->
+    <section id="page-transaksi" class="page hidden">
+      <div class="card">
+        <input type="search" id="filter-search" class="form-input" placeholder="Cari transaksi..." style="background: var(--bg-base); border: none;">
+        <div class="grid-2 mt-16" style="gap: 8px;">
+          <select id="filter-jenis" class="form-select" style="background: var(--bg-base); border: none;">
+            <option value="">Semua Jenis</option>
+            <option value="Pemasukan">Pemasukan</option>
+            <option value="Pengeluaran">Pengeluaran</option>
+          </select>
+          <select id="filter-kat" class="form-select" style="background: var(--bg-base); border: none;">
+            <option value="">Semua Kategori</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3>Riwayat Transaksi</h3>
+        </div>
+        <div id="trx-list"></div>
+      </div>
+    </section>
+
+    <!-- ── BUDGET ── -->
+    <section id="page-budget" class="page hidden">
+      <div class="card">
+        <div class="card-header">
+          <h3>Anggaran Bulanan</h3>
+          <button class="btn-secondary btn-sm" id="btn-add-budget">
+            <i data-feather="plus" style="width: 16px; height: 16px;"></i> Tambah
+          </button>
+        </div>
+        <div id="budget-list"></div>
+      </div>
+    </section>
+
+    <!-- ── KATEGORI ── -->
+    <section id="page-kategori" class="page hidden">
+      <div class="card">
+        <div class="card-header">
+          <h3>Kategori Pengeluaran</h3>
+          <button class="btn-secondary btn-sm" data-kat-jenis="Pengeluaran" id="btn-add-kat-keluar">Tambah</button>
+        </div>
+        <div id="kat-pengeluaran-list"></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <h3>Kategori Pemasukan</h3>
+          <button class="btn-secondary btn-sm" data-kat-jenis="Pemasukan" id="btn-add-kat-masuk">Tambah</button>
+        </div>
+        <div id="kat-pemasukan-list"></div>
+      </div>
+    </section>
+
+    <!-- ── LAPORAN ── -->
+    <section id="page-laporan" class="page hidden">
+      <div class="card">
+        <div class="card-header">
+          <h3>Tren 6 Bulan Terakhir</h3>
+        </div>
+        <div style="position: relative; height: 220px; width: 100%;">
+          <canvas id="chart-bar"></canvas>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div class="card-header">
+          <h3>Export Data</h3>
+        </div>
+        <div class="grid-2">
+          <button class="btn-secondary" id="btn-export-csv" style="height: auto; padding: 16px; flex-direction: column;">
+            <i data-feather="file-text" style="margin-bottom: 8px;"></i>
+            <span>CSV</span>
+          </button>
+          <button class="btn-secondary" id="btn-export-xlsx" style="height: auto; padding: 16px; flex-direction: column;">
+            <i data-feather="grid" style="margin-bottom: 8px;"></i>
+            <span>Excel</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── PENGATURAN ── -->
+    <section id="page-pengaturan" class="page hidden">
+      <div class="card">
+        <div class="card-header">
+          <h3>Koneksi API</h3>
+          <span id="conn-status" style="font-size: 12px; font-weight: 600; color: var(--warn);">Belum Terhubung</span>
+        </div>
+        <div class="form-group">
+          <input type="url" id="input-script-url" class="form-input" placeholder="URL Google Apps Script" style="background: var(--bg-base);">
+        </div>
+        <button class="btn-secondary mb-16" id="btn-test-conn">Test Koneksi</button>
+        <button class="btn-primary" id="btn-save-settings">Simpan & Muat Ulang</button>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3>Pengaturan Lainnya</h3>
+        </div>
+        <div class="list-item" id="btn-theme-toggle" style="cursor: pointer;">
+          <div class="item-left">
+            <div class="item-icon"><i data-feather="moon"></i></div>
+            <div class="item-info"><span class="item-title">Mode Gelap</span></div>
+          </div>
+          <i data-feather="chevron-right" style="color: var(--text-3);"></i>
+        </div>
+        <div class="list-item" id="btn-clear-cache" style="cursor: pointer;">
+          <div class="item-left">
+            <div class="item-icon" style="color: var(--expense);"><i data-feather="trash-2"></i></div>
+            <div class="item-info"><span class="item-title" style="color: var(--expense);">Hapus Cache Lokal</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── HABITS ── -->
+    <section id="page-habits" class="page hidden">
+      <!-- Ringkasan Statistik -->
+      <div class="card grid-3" style="text-align: center; gap: 8px; padding: 20px 16px;">
+        <div>
+          <span style="font-size: 12px; font-weight: 500; color: var(--text-3);">Overall Rate</span>
+          <div style="position: relative; width: 64px; height: 64px; margin: 8px auto;">
+            <svg viewBox="0 0 36 36" style="width: 100%; height: 100%; transform: rotate(-90deg);">
+              <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--border)" stroke-width="3"></path>
+              <path id="habit-overall-path" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--text-1)" stroke-width="3" stroke-dasharray="0, 100"></path>
+            </svg>
+            <div id="habit-overall-text" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: 700; font-size: 14px;">0%</div>
+          </div>
+        </div>
+        <div>
+          <span style="font-size: 12px; font-weight: 500; color: var(--text-3);">Streak Days</span>
+          <h2 id="habit-streak-days" style="margin-top: 16px; font-size: 28px;">0</h2>
+          <span style="font-size: 12px; color: var(--text-3);">Hari</span>
+        </div>
+        <div>
+          <span style="font-size: 12px; font-weight: 500; color: var(--text-3);">Perfect Days</span>
+          <h2 id="habit-perfect-days" style="margin-top: 16px; font-size: 28px;">0</h2>
+          <span style="font-size: 12px; color: var(--text-3);">Hari</span>
+        </div>
+      </div>
+
+      <!-- Kalender Bulanan (Heatmap) -->
+      <div class="card">
+        <div class="card-header" style="justify-content: center; position: relative;">
+          <button id="btn-habit-prev-month" style="position: absolute; left: 0; background: none; border: none; padding: 4px; cursor: pointer;"><i data-feather="chevron-left"></i></button>
+          <h3 id="habit-month-label" style="margin: 0;">Juli 2026</h3>
+          <button id="btn-habit-next-month" style="position: absolute; right: 0; background: none; border: none; padding: 4px; cursor: pointer;"><i data-feather="chevron-right"></i></button>
+        </div>
+        
+        <div class="heatmap-days" style="display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 11px; font-weight: 600; color: var(--text-3); margin-bottom: 8px;">
+          <div>Sen</div><div>Sel</div><div>Rab</div><div>Kam</div><div>Jum</div><div>Sab</div><div>Min</div>
+        </div>
+        
+        <div id="habit-heatmap-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px;">
+          <!-- Kotak Heatmap akan dirender dari JS -->
+        </div>
+        
+        <div style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 16px; font-size: 10px; color: var(--text-3);">
+          <div style="width: 12px; height: 12px; border-radius: 4px; border: 1px solid var(--border);"></div> Belum ada
+          <div style="width: 12px; height: 12px; border-radius: 4px; background: rgba(17,17,17,0.25);"></div> 25%
+          <div style="width: 12px; height: 12px; border-radius: 4px; background: rgba(17,17,17,0.5);"></div> 50%
+          <div style="width: 12px; height: 12px; border-radius: 4px; background: rgba(17,17,17,0.75);"></div> 75%
+          <div style="width: 12px; height: 12px; border-radius: 4px; background: #111111;"></div> 100%
+        </div>
+      </div>
+
+      <!-- Today's Habit -->
+      <div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 4px; margin-top: 16px;">
+          <h3 style="font-size: 16px; font-weight: 600;">Today's Habit</h3>
+          <span id="habit-today-count" style="font-size: 12px; color: var(--text-3);">0 dari 0</span>
+        </div>
+        
+        <div id="habit-today-list" style="display: flex; flex-direction: column; gap: 12px;">
+          <!-- List Habits via JS -->
+        </div>
+      </div>
+
+      <!-- Today's Progress -->
+      <div style="margin-top: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <h4 style="font-size: 14px; font-weight: 600;">Today's Progress</h4>
+          <span id="habit-today-pct" style="font-weight: 700; font-size: 14px;">0%</span>
+        </div>
+        <div class="progress-wrap" style="height: 12px;">
+          <div id="habit-today-bar" class="progress-bar" style="width: 0%; background: var(--text-1); border-radius: 6px;"></div>
+        </div>
+      </div>
+
+      <!-- Motivasi -->
+      <div class="card mt-24" style="display: flex; align-items: center; padding: 16px; gap: 16px;">
+        <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--text-1); display: flex; align-items: center; justify-content: center; color: white;">
+          <i data-feather="star"></i>
+        </div>
+        <div style="flex: 1;">
+          <h4 id="habit-quote-title" style="font-size: 14px; font-weight: 600; margin-bottom: 4px;">Ayo Mulai!</h4>
+          <p id="habit-quote-desc" style="font-size: 12px; color: var(--text-3);">Selesaikan satu kebiasaan untuk memulai harimu.</p>
+        </div>
+        <i data-feather="chevron-right" style="color: var(--text-3);"></i>
+      </div>
+
+    </section>
+
+  </main>
+  
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-page="dashboard" aria-label="Dashboard">
+      <i data-feather="home"></i>
+      <span class="nav-label">Home</span>
+    </button>
+    <button class="nav-item" data-page="transaksi" aria-label="Transaksi">
+      <i data-feather="list"></i>
+      <span class="nav-label">Transaksi</span>
+    </button>
+    
+    <!-- FAB Center -->
+    <div style="position: relative; width: 60px;">
+      <div class="fab-container" id="btn-fab">
+        <i data-feather="plus"></i>
+      </div>
+    </div>
+    
+    <button class="nav-item" data-page="budget" aria-label="Budget">
+      <i data-feather="pie-chart"></i>
+      <span class="nav-label">Budget</span>
+    </button>
+    <button class="nav-item" data-page="habits" aria-label="Habits">
+      <i data-feather="check-square"></i>
+      <span class="nav-label">Habits</span>
+    </button>
+  </nav>
+
+</div>
+
+<!-- ── MODALS ── -->
+<div id="modal-trx" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-trx-title">Transaksi</h2>
+      <button class="modal-close" data-close="modal-trx"><i data-feather="x"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="trx-id">
+      
+      <div class="segmented-control mb-16" id="jenis-toggle">
+        <button type="button" class="seg-btn active" data-jenis="Pengeluaran">Pengeluaran</button>
+        <button type="button" class="seg-btn" data-jenis="Pemasukan">Pemasukan</button>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Nominal</label>
+        <div style="position: relative;">
+          <span style="position: absolute; left: 16px; top: 14px; font-weight: 600; font-size: 16px;">Rp</span>
+          <input type="text" id="trx-jumlah" class="form-input" style="padding-left: 48px; font-weight: 700; font-size: 18px;" placeholder="0" inputmode="numeric">
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Kategori</label>
+        <select id="trx-kategori" class="form-select"></select>
+      </div>
+      
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Tanggal</label>
+          <input type="date" id="trx-tanggal" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Keterangan</label>
+          <input type="text" id="trx-keterangan" class="form-input" placeholder="Makan siang...">
+        </div>
+      </div>
+      
+      <div class="form-group mb-16">
+        <label class="form-label">Catatan (Opsional)</label>
+        <input type="text" id="trx-catatan" class="form-input" placeholder="Deskripsi tambahan">
+      </div>
+      
+      <button class="btn-primary" id="btn-submit-trx">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-budget" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-budget-title">Set Anggaran</h2>
+      <button class="modal-close" data-close="modal-budget"><i data-feather="x"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="budget-id">
+      <div class="form-group">
+        <label class="form-label">Kategori</label>
+        <select id="budget-kategori" class="form-select"></select>
+      </div>
+      <div class="form-group mb-16">
+        <label class="form-label">Limit Bulanan</label>
+        <div style="position: relative;">
+          <span style="position: absolute; left: 16px; top: 14px; font-weight: 600; font-size: 16px;">Rp</span>
+          <input type="text" id="budget-limit" class="form-input" style="padding-left: 48px; font-weight: 700;" placeholder="0" inputmode="numeric">
+        </div>
+      </div>
+      <button class="btn-primary" id="btn-submit-budget">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-kategori" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-kat-title">Kategori Baru</h2>
+      <button class="modal-close" data-close="modal-kategori"><i data-feather="x"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="kat-id">
+      <input type="hidden" id="kat-jenis">
+      <div class="form-group">
+        <label class="form-label">Nama Kategori</label>
+        <input type="text" id="kat-nama" class="form-input" placeholder="Contoh: Belanja">
+      </div>
+      <div class="grid-2 mb-16">
+        <div class="form-group">
+          <label class="form-label">Ikon (Emoji)</label>
+          <input type="text" id="kat-icon" class="form-input" placeholder="🛒" maxlength="2">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Warna Tema</label>
+          <input type="color" id="kat-warna" class="form-input" value="#111111" style="padding: 4px 8px;">
+        </div>
+      </div>
+      <button class="btn-primary" id="btn-submit-kat">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL FAB ── -->
+<div id="modal-fab" class="modal-overlay hidden" style="align-items: flex-end; padding-bottom: 0;">
+  <div class="modal" style="border-radius: 24px 24px 0 0; padding-bottom: 32px; animation: slideUp 0.3s ease;">
+    <div class="modal-header" style="justify-content: center; margin-bottom: 24px; position: relative;">
+      <h2 style="font-size: 16px; font-weight: 600;">FAB Tracker</h2>
+      <button class="modal-close" data-close="modal-fab" style="position: absolute; right: 0; background: none; border: none;"><i data-feather="x"></i></button>
+    </div>
+    
+    <div class="modal-body" style="display: flex; flex-direction: column; gap: 12px;">
+      <button class="btn-secondary" id="btn-fab-out" style="justify-content: flex-start; padding: 16px; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+        <i data-feather="arrow-up-right" style="color: var(--expense); margin-right: 12px;"></i> Tambah Pengeluaran
+      </button>
+      <button class="btn-secondary" id="btn-fab-in" style="justify-content: flex-start; padding: 16px; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+        <i data-feather="arrow-down-left" style="color: var(--income); margin-right: 12px;"></i> Tambah Pemasukan
+      </button>
+      <button class="btn-secondary" id="btn-fab-habit" style="justify-content: flex-start; padding: 16px; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+        <i data-feather="check-square" style="color: var(--text-1); margin-right: 12px;"></i> Tambah Habit Baru
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL HABIT ── -->
+<div id="modal-habit" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header" style="justify-content: space-between;">
+      <button class="modal-close" data-close="modal-habit" style="background:none; border:none; color: var(--text-3); font-weight: 500;">Batal</button>
+      <h2 id="modal-habit-title" style="font-size: 16px; font-weight: 600;">Habit Baru</h2>
+      <button id="btn-submit-habit" style="background:none; border:none; color: var(--text-1); font-weight: 600;">Simpan</button>
+    </div>
+    <div class="modal-body mt-16">
+      <input type="hidden" id="habit-id">
+      
+      <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 24px;">
+        <div style="width: 64px; height: 64px; border-radius: 50%; border: 1px dashed var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer;">
+          <i data-feather="camera" style="color: var(--text-3);"></i>
+        </div>
+        <span style="font-size: 12px; color: var(--text-3); margin-top: 8px;">Pilih Icon</span>
+        <input type="hidden" id="habit-ikon" value="check-circle">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" style="font-size: 12px; color: var(--text-3);">Nama Habit</label>
+        <input type="text" id="habit-nama" class="form-input" placeholder="Contoh: Membaca Buku" style="border: none; border-bottom: 1px solid var(--border); border-radius: 0; padding: 8px 0;">
+      </div>
+      
+      <div class="form-group" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 16px;">
+        <label class="form-label" style="margin: 0;">Tipe Habit</label>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="color: var(--text-3);">Counter (Jumlah)</span>
+          <i data-feather="chevron-right" style="color: var(--text-3); width: 16px;"></i>
+        </div>
+        <input type="hidden" id="habit-tipe" value="Counter">
+      </div>
+
+      <div class="form-group" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 16px;">
+        <label class="form-label" style="margin: 0;">Target</label>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <input type="text" id="habit-target" placeholder="15" style="border: none; text-align: right; width: 40px; font-weight: 600;" inputmode="numeric">
+          <span style="color: var(--text-3);">menit</span>
+        </div>
+      </div>
+
+      <div class="form-group" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 16px;">
+        <label class="form-label" style="margin: 0;">Frekuensi</label>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="color: var(--text-3);">Setiap Hari</span>
+          <i data-feather="chevron-right" style="color: var(--text-3); width: 16px;"></i>
+        </div>
+        <input type="hidden" id="habit-frekuensi" value="Daily">
+      </div>
+      
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+  // Initialize Feather Icons
+  feather.replace();
+</script>
+</body>
+</html>
