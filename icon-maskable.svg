@@ -1,25 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <defs>
-    <radialGradient id="bg" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#1a2942"/>
-      <stop offset="100%" stop-color="#0f172a"/>
-    </radialGradient>
-    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#10b981" stop-opacity="0.3"/>
-      <stop offset="100%" stop-color="#10b981" stop-opacity="0"/>
-    </radialGradient>
-    <filter id="shadow">
-      <feDropShadow dx="0" dy="0" stdDeviation="15" flood-color="#10b981" flood-opacity="0.6"/>
-    </filter>
-  </defs>
-  <!-- Background (Full bleed for maskable) -->
-  <rect width="512" height="512" fill="url(#bg)"/>
-  <!-- Safe zone is centered 410x410 -->
-  <!-- Glow -->
-  <circle cx="256" cy="256" r="140" fill="url(#glow)"/>
-  <!-- Coin -->
-  <circle cx="256" cy="256" r="100" fill="#0f2a1e" stroke="#10b981" stroke-width="6" filter="url(#shadow)"/>
-  <circle cx="256" cy="256" r="88" fill="none" stroke="#10b981" stroke-width="2" opacity="0.4"/>
-  <!-- Rp symbol -->
-  <text x="256" y="280" text-anchor="middle" font-family="'Inter', Arial, sans-serif" font-size="80" font-weight="800" fill="#10b981">Rp</text>
+  <rect width="512" height="512" fill="#111111"/>
+  <text x="256" y="340" text-anchor="middle" font-family="'Inter', Arial, sans-serif" font-size="240" font-weight="700" fill="#FFFFFF">F</text>
+  <circle cx="370" cy="150" r="32" fill="#FFFFFF"/>
 </svg>
