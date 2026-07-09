@@ -309,3 +309,55 @@ select.form-select {
   background: var(--bg-base); transition: 0.2s;
   border: 1px solid var(--border);
 }
+
+/* ── SCOS Slider Styles ── */
+.scos-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 99px;
+  outline: none;
+  cursor: pointer;
+  transition: height 0.1s;
+}
+.scos-range:active { height: 8px; }
+
+/* Danger (Stress/Criticism/Urge) — dark fill */
+.scos-range-danger {
+  background: linear-gradient(to right, var(--text-1) 0%, var(--text-1) 0%, var(--border) 0%, var(--border) 100%);
+}
+
+/* Good (Presence) — green fill */
+.scos-range-good {
+  background: linear-gradient(to right, var(--income) 0%, var(--income) 50%, var(--border) 50%, var(--border) 100%);
+}
+
+/* Thumb styling */
+.scos-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 3px solid var(--text-1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.scos-range::-webkit-slider-thumb:active {
+  transform: scale(1.2);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+}
+.scos-range-good::-webkit-slider-thumb {
+  border-color: var(--income);
+}
+.scos-range::-moz-range-thumb {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 3px solid var(--text-1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  cursor: pointer;
+}

@@ -1018,26 +1018,107 @@ async function submitHabit() {
 }
 
 // ─── SCOS, AKUN & TRANSFER LOGIC ─────────────────────────────
+
+// SCOS UI Helpers
+const SCOS_EMOJIS = {
+  stress:    ['😌','😌','🙂','😐','😟','😟','😰','😰','😡','😡','🤯'],
+  criticism: ['🤗','🤗','🙂','😐','😕','😕','😞','😞','😤','😤','🔥'],
+  urge:      ['🧘','🧘','😊','😐','😬','😬','😫','😫','😈','😈','💥'],
+  presence:  ['🌙','🌑','🌒','🌓','🌔','🌕','🌕','✨','✨','🌟','🌟'],
+};
+
+function updateSCOSSlider(field, val) {
+  const v = parseInt(val);
+  document.getElementById(`scos-${field}-badge`).textContent = v;
+  document.getElementById(`scos-${field}-emoji`).textContent = SCOS_EMOJIS[field][v];
+
+  // Update fill gradient
+  const pct = (v / 10) * 100;
+  const el = document.getElementById(`scos-${field}`);
+  if (field === 'presence') {
+    el.style.background = `linear-gradient(to right, var(--income) ${pct}%, var(--border) ${pct}%)`;
+  } else {
+    // Danger: low is good (grey), high is dark
+    el.style.background = `linear-gradient(to right, var(--text-1) ${pct}%, var(--border) ${pct}%)`;
+  }
+}
+
+function selectOutcome(val) {
+  document.getElementById('scos-outcome').value = val;
+  document.querySelectorAll('.scos-outcome-btn').forEach(btn => {
+    const isActive = btn.dataset.value === val;
+    btn.style.background = isActive ? 'var(--text-1)' : 'transparent';
+    btn.style.color = isActive ? 'white' : 'var(--text-2)';
+    btn.style.borderColor = isActive ? 'var(--text-1)' : 'var(--border)';
+  });
+}
+
+function toggleSelfRespect() {
+  const hidden = document.getElementById('scos-respect');
+  const toggle = document.getElementById('scos-respect-toggle');
+  const thumb = document.getElementById('scos-respect-thumb');
+  const isYes = hidden.value === 'Yes';
+  hidden.value = isYes ? 'No' : 'Yes';
+  if (isYes) {
+    // Switch to No
+    toggle.style.background = 'var(--border)';
+    thumb.style.right = 'auto';
+    thumb.style.left = '3px';
+  } else {
+    // Switch to Yes
+    toggle.style.background = 'var(--text-1)';
+    thumb.style.left = 'auto';
+    thumb.style.right = '3px';
+  }
+}
+
+function initSCOSModal(logToday) {
+  const vals = logToday ? {
+    stress: logToday.stress || 0,
+    criticism: logToday.criticism || 0,
+    urge: logToday.urge || 0,
+    presence: logToday.presence || 5,
+    outcome: logToday.outcome || 'Stable',
+    respect: logToday.selfRespect || 'Yes',
+    notes: logToday.notes || ''
+  } : { stress: 0, criticism: 0, urge: 0, presence: 5, outcome: 'Stable', respect: 'Yes', notes: '' };
+
+  // Set sliders
+  ['stress','criticism','urge','presence'].forEach(f => {
+    document.getElementById(`scos-${f}`).value = vals[f];
+    updateSCOSSlider(f, vals[f]);
+  });
+
+  // Set outcome pills
+  selectOutcome(vals.outcome);
+
+  // Set self-respect toggle
+  document.getElementById('scos-respect').value = vals.respect;
+  const toggle = document.getElementById('scos-respect-toggle');
+  const thumb = document.getElementById('scos-respect-thumb');
+  if (vals.respect === 'Yes') {
+    toggle.style.background = 'var(--text-1)';
+    thumb.style.left = 'auto'; thumb.style.right = '3px';
+  } else {
+    toggle.style.background = 'var(--border)';
+    thumb.style.right = 'auto'; thumb.style.left = '3px';
+  }
+
+  // Set notes
+  document.getElementById('scos-notes').value = vals.notes;
+
+  // Set date
+  const dateEl = document.getElementById('scos-modal-date');
+  if (dateEl) {
+    const now = new Date();
+    dateEl.textContent = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  }
+}
+
 function openAddSCOS() {
   const dToday = today();
   const logToday = S.scosLogs.find(l => l.tanggal === dToday);
-  if (logToday) {
-    document.getElementById('scos-stress').value = logToday.stress || 0;
-    document.getElementById('scos-criticism').value = logToday.criticism || 0;
-    document.getElementById('scos-urge').value = logToday.urge || 0;
-    document.getElementById('scos-presence').value = logToday.presence || 5;
-    document.getElementById('scos-outcome').value = logToday.outcome || 'Stable';
-    document.getElementById('scos-respect').value = logToday.selfRespect || 'Yes';
-    document.getElementById('scos-notes').value = logToday.notes || '';
-  } else {
-    document.getElementById('scos-stress').value = 0;
-    document.getElementById('scos-criticism').value = 0;
-    document.getElementById('scos-urge').value = 0;
-    document.getElementById('scos-presence').value = 5;
-    document.getElementById('scos-outcome').value = 'Stable';
-    document.getElementById('scos-respect').value = 'Yes';
-    document.getElementById('scos-notes').value = '';
-  }
+  initSCOSModal(logToday || null);
   openModal('modal-scos');
 }
 
