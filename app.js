@@ -341,7 +341,8 @@ function calcSCOSWidget() {
     if(S.habitLogs.find(l => l.habitId === h.id && l.tanggal === todayDate)) completed++;
   });
   const pct = todaysHabits.length ? Math.round((completed / todaysHabits.length) * 100) : 0;
-  document.getElementById('widget-habit-path').style.strokeDasharray = `${pct}, 100`;
+  const habitPath = document.getElementById('widget-habit-path');
+  if (habitPath) habitPath.style.strokeDasharray = `${pct}, 100`;
 }
 
 function renderRecentList(items) {
@@ -504,7 +505,7 @@ function openAddTrx(jenis='Pengeluaran') {
   document.getElementById('trx-keterangan').value = '';
   document.getElementById('trx-catatan').value = '';
   const selAkun = document.getElementById('trx-akun');
-  selAkun.innerHTML = S.akun.map(a => `<option value="${a.nama}">${a.nama}</option>`).join('');
+  selAkun.innerHTML = '<option value="">-- Pilih Dompet --</option>' + S.akun.map(a => `<option value="${a.nama}">${a.nama}</option>`).join('');
   
   setJenis(jenis);
   document.getElementById('modal-trx-title').textContent = 'Tambah Transaksi';
@@ -520,7 +521,7 @@ function openEditTrx(id) {
   document.getElementById('trx-catatan').value = t.catatan||'';
   
   const selAkun = document.getElementById('trx-akun');
-  selAkun.innerHTML = S.akun.map(a => `<option value="${a.nama}">${a.nama}</option>`).join('');
+  selAkun.innerHTML = '<option value="">-- Pilih Dompet --</option>' + S.akun.map(a => `<option value="${a.nama}">${a.nama}</option>`).join('');
   if (t.jenis === 'Pemasukan') selAkun.value = t.akunTujuan || '';
   else selAkun.value = t.akunAsal || '';
   
@@ -552,7 +553,7 @@ async function submitTrx() {
   const akun      = document.getElementById('trx-akun').value;
   const jenis     = S.jenisTrx;
 
-  if (!tanggal||!jumlah||!keterangan||!kategori||!akun) { toast('Isi semua field wajib (termasuk dompet)', 'warn'); return; }
+  if (!tanggal||!jumlah||!keterangan||!kategori) { toast('Isi semua field wajib', 'warn'); return; }
   
   const payload = { id, tanggal, jumlah, keterangan, kategori, catatan, jenis };
   if (jenis === 'Pemasukan') {
@@ -941,8 +942,11 @@ function renderHeatmap(logsByDate = {}, maxHabits = 1) {
 }
 
 async function toggleHabit(habitId, btn) {
-  if (!navigator.onLine && !CFG.scriptUrl) { toast("Offline", 'warn'); return; }
-  
+  if (!CFG.scriptUrl) {
+    toast('Atur URL Google Apps Script di Pengaturan terlebih dahulu', 'warn');
+    return;
+  }
+
   const isDone = !btn.classList.contains('done');
   // Optimistic UI update
   btn.classList.toggle('done');
@@ -954,7 +958,7 @@ async function toggleHabit(habitId, btn) {
     if (S.page === 'growth') renderGrowth();
   } catch(e) {
     btn.classList.toggle('done'); // revert
-    toast('Gagal mencatat habit', 'err');
+    if (e.message !== 'no_url') toast('Gagal mencatat habit: ' + e.message, 'err');
   }
 }
 
@@ -966,30 +970,41 @@ function openAddHabit() {
 }
 
 async function submitHabit() {
+  if (!CFG.scriptUrl) {
+    toast('Atur URL Google Apps Script di Pengaturan terlebih dahulu', 'warn');
+    goTo('pengaturan');
+    return;
+  }
+
   const nama = document.getElementById('habit-nama').value.trim();
   if (!nama) return toast('Nama habit wajib diisi', 'warn');
   
   const payload = {
     action: 'addHabit',
     nama: nama,
-    target: document.getElementById('habit-target').value,
-    tipe: document.getElementById('habit-tipe').value,
-    frekuensi: document.getElementById('habit-frekuensi').value,
-    ikon: document.getElementById('habit-ikon').value,
+    target: document.getElementById('habit-target').value || '',
+    tipe: document.getElementById('habit-tipe').value || 'Counter',
+    frekuensi: document.getElementById('habit-frekuensi').value || 'Daily',
+    ikon: document.getElementById('habit-ikon').value || 'check-circle',
   };
   
   const btn = document.getElementById('btn-submit-habit');
+  const origText = btn.textContent;
   btn.textContent = '...';
+  btn.disabled = true;
   try {
     await apiPost(payload);
-    toast('Habit tersimpan');
+    toast('Habit tersimpan ✓');
     closeModal('modal-habit');
     S.habits = await apiGet({ action: 'getHabits' });
+    S.habitLogs = await apiGet({ action: 'getHabitLogs' });
     if(S.page === 'growth') renderGrowth();
   } catch(e) {
-    toast(e.message, 'err');
+    if (e.message !== 'no_url') toast('Gagal: ' + e.message, 'err');
+  } finally {
+    btn.textContent = origText;
+    btn.disabled = false;
   }
-  btn.textContent = 'Simpan';
 }
 
 // ─── SCOS, AKUN & TRANSFER LOGIC ─────────────────────────────

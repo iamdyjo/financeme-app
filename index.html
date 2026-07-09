@@ -214,19 +214,15 @@
     <section id="page-growth" class="page hidden">
       <!-- KPI SCOS (Grid) -->
       <div class="grid-2">
-        <div class="card" style="padding: 16px; display: flex; align-items: center; justify-content: space-between;">
-          <div>
-            <span style="font-size: 11px; font-weight: 600; color: var(--text-3); text-transform: uppercase;">Stability</span>
-            <div id="scos-stability-score" style="font-size: 24px; font-weight: 700; margin-top: 4px; color: var(--income);">0</div>
-          </div>
-          <i data-feather="activity" style="color: var(--income); opacity: 0.5;"></i>
+        <div class="card" style="padding: 16px;">
+          <span style="font-size: 11px; font-weight: 600; color: var(--text-3); text-transform: uppercase; display: block; margin-bottom: 4px;">Stability</span>
+          <div id="scos-stability-score" style="font-size: 32px; font-weight: 700; color: var(--income); line-height: 1;">0</div>
+          <div style="margin-top: 8px;"><i data-feather="activity" style="color: var(--income); opacity: 0.5; width: 16px; height: 16px;"></i></div>
         </div>
-        <div class="card" style="padding: 16px; display: flex; align-items: center; justify-content: space-between;">
-          <div>
-            <span style="font-size: 11px; font-weight: 600; color: var(--text-3); text-transform: uppercase;">Discipline</span>
-            <div id="scos-discipline-score" style="font-size: 24px; font-weight: 700; margin-top: 4px; color: var(--text-1);">0</div>
-          </div>
-          <i data-feather="shield" style="color: var(--text-1); opacity: 0.5;"></i>
+        <div class="card" style="padding: 16px;">
+          <span style="font-size: 11px; font-weight: 600; color: var(--text-3); text-transform: uppercase; display: block; margin-bottom: 4px;">Discipline</span>
+          <div id="scos-discipline-score" style="font-size: 32px; font-weight: 700; color: var(--text-1); line-height: 1;">0</div>
+          <div style="margin-top: 8px;"><i data-feather="shield" style="color: var(--text-1); opacity: 0.5; width: 16px; height: 16px;"></i></div>
         </div>
       </div>
 
@@ -376,8 +372,8 @@
       
       <div class="grid-2">
         <div class="form-group mb-16">
-          <label class="form-label">Akun/Dompet</label>
-          <select id="trx-akun" class="form-select"></select>
+          <label class="form-label">Akun/Dompet <span style="color:var(--text-3); font-weight:400;">(Opsional)</span></label>
+          <select id="trx-akun" class="form-select"><option value="">-- Pilih Dompet --</option></select>
         </div>
         <div class="form-group mb-16">
           <label class="form-label">Catatan (Opsional)</label>
