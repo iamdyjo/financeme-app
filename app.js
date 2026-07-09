@@ -272,11 +272,13 @@ function renderDashboard() {
   saldoEl.style.color = totalKekayaan < 0 ? 'var(--expense)' : 'var(--text-1)';
 
   // Render Akun/Dompet Horizontal
-  const akunListEl = document.getElementById('dashboard-akun-list');
-  if (S.akun.length === 0) {
-    akunListEl.innerHTML = `<div style="font-size:12px; color:var(--text-3); padding: 8px 16px;">Belum ada dompet. <a href="#" onclick="document.getElementById('modal-akun').classList.remove('hidden'); return false;">+ Tambah Dompet</a></div>`;
+  const elAkun = document.getElementById('dashboard-akun-list');
+  if (!S.akun.length) {
+    elAkun.innerHTML = `
+      <div style="min-width: 140px; padding: 12px; border: 1px dashed var(--border); border-radius: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; margin: 0 16px;" onclick="openAddAkun()">
+        <span style="font-size: 13px; font-weight: 500; color: var(--text-3);">+ Tambah Dompet</span>
+      </div>`;
   } else {
-    // Hitung saldo per akun
     const akunBalances = S.akun.map(a => {
       let b = Number(a.saldoAwal) || 0;
       S.transaksi.forEach(t => {
@@ -284,7 +286,6 @@ function renderDashboard() {
         if (t.jenis === 'Pengeluaran' && t.akunAsal === a.nama) b -= Number(t.jumlah);
         if (t.jenis === 'Transfer' && t.akunAsal === a.nama) b -= Number(t.jumlah);
         if (t.jenis === 'Transfer' && t.akunTujuan === a.nama) b += Number(t.jumlah);
-        // Fallback for old transactions without akun
         if (!t.akunAsal && !t.akunTujuan && S.akun.length === 1) {
            if (t.jenis === 'Pemasukan') b += Number(t.jumlah);
            if (t.jenis === 'Pengeluaran') b -= Number(t.jumlah);
@@ -293,7 +294,7 @@ function renderDashboard() {
       return { ...a, balance: b };
     });
     
-    akunListEl.innerHTML = akunBalances.map(a => `
+    elAkun.innerHTML = akunBalances.map(a => `
       <div style="background: var(--bg-base); padding: 12px 16px; border-radius: 16px; min-width: 140px; display: flex; flex-direction: column; gap: 8px; border: 1px solid var(--border); cursor: pointer;" onclick="editAkun('${esc(a.id)}')">
         <div style="display:flex; align-items:center; gap:8px;">
           <div style="width: 24px; height: 24px; border-radius: 50%; background: ${a.warna}20; color: ${a.warna}; display: flex; align-items: center; justify-content: center;">
@@ -303,9 +304,7 @@ function renderDashboard() {
         </div>
         <div style="font-size: 14px; font-weight: 700; color: var(--text-1);">${rp(a.balance)}</div>
       </div>
-    `).join('');
-    // Tombol tambah akun
-    akunListEl.innerHTML += `
+    `).join('') + `
       <div style="background: transparent; padding: 12px; border-radius: 16px; display: flex; align-items: center; justify-content: center; border: 1px dashed var(--border); cursor: pointer;" onclick="openAddAkun()">
         <i data-feather="plus" style="color:var(--text-3);"></i>
       </div>
@@ -903,8 +902,8 @@ function renderGrowth() {
               <i data-feather="check" style="width: 12px; height: 12px;"></i>
             </button>
           </div>
-          <div>
-            <h4 style="font-size: 13px; font-weight: 600; margin-bottom: 2px;">${esc(h.nama)}</h4>
+          <div style="overflow: hidden;">
+            <h4 style="font-size: 13px; font-weight: 600; margin-bottom: 2px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">${esc(h.nama)}</h4>
             <span style="font-size: 10px; color: var(--text-3);">${esc(h.target)}</span>
           </div>
         </div>
@@ -952,7 +951,7 @@ async function toggleHabit(habitId, btn) {
     await apiPost({ action: 'toggleHabitLog', habitId: habitId, tanggal: today(), status: isDone ? "1" : "0" });
     // Reload logs
     S.habitLogs = await apiGet({ action: 'getHabitLogs' });
-    renderHabits(); // Re-render to update stats
+    if (S.page === 'growth') renderGrowth();
   } catch(e) {
     btn.classList.toggle('done'); // revert
     toast('Gagal mencatat habit', 'err');
@@ -986,7 +985,7 @@ async function submitHabit() {
     toast('Habit tersimpan');
     closeModal('modal-habit');
     S.habits = await apiGet({ action: 'getHabits' });
-    if(S.page === 'habits') renderHabits();
+    if(S.page === 'growth') renderGrowth();
   } catch(e) {
     toast(e.message, 'err');
   }

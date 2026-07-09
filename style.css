@@ -166,7 +166,7 @@ a { color: var(--text-1); text-decoration: none; font-weight: 500; }
 .item-info { display: flex; flex-direction: column; gap: 4px; }
 .item-title { font-weight: 600; color: var(--text-1); font-size: 16px; }
 .item-subtitle { font-size: 13px; color: var(--text-3); }
-.item-amount { font-weight: 700; font-size: 16px; text-align: right; }
+.item-amount { font-weight: 700; font-size: 16px; text-align: right; white-space: nowrap; }
 .amt-inc { color: var(--income); }
 .amt-exp { color: var(--text-1); }
 
@@ -233,7 +233,7 @@ a { color: var(--text-1); text-decoration: none; font-weight: 500; }
 .fab-container:active { transform: translate(-50%, -50%) scale(0.95); }
 
 /* Progress Bar */
-.progress-wrap { height: 12px; background: var(--bg-base); border-radius: var(--r-pill); overflow: hidden; }
+.progress-wrap { height: 12px; background: var(--border); border-radius: var(--r-pill); overflow: hidden; }
 .progress-bar { height: 100%; background: var(--text-1); border-radius: var(--r-pill); transition: width 0.5s ease; }
 
 /* Modals */
@@ -293,4 +293,5 @@ a { color: var(--text-1); text-decoration: none; font-weight: 500; }
 .habit-heatmap-cell {
   width: 100%; aspect-ratio: 1; border-radius: 6px;
   background: var(--bg-base); transition: 0.2s;
+  border: 1px solid var(--border);
 }
