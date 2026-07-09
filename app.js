@@ -18,6 +18,8 @@ const S = {
   budget:    [],
   habits:    [],
   habitLogs: [],
+  akun:      [],
+  scosLogs:  [],
   jenisTrx:  'Pengeluaran',
 };
 
@@ -120,18 +122,22 @@ async function loadAll() {
   if (!CFG.scriptUrl) return;
   toast('Memuat data dari Google Sheets…', 'info');
   try {
-    const [trx, kat, bud, hab, hlog] = await Promise.all([
+    const [trx, kat, bud, hab, hlog, akn, scs] = await Promise.all([
       apiGet({ action:'getTransaksi' }),
       apiGet({ action:'getKategori'  }),
       apiGet({ action:'getBudget', bulan: monthStr() }),
       apiGet({ action:'getHabits' }),
       apiGet({ action:'getHabitLogs' }),
+      apiGet({ action:'getAkun' }),
+      apiGet({ action:'getSCOS' }),
     ]);
     S.transaksi = trx || [];
     S.kategori  = kat || [];
     S.budget    = bud || [];
     S.habits    = hab || [];
     S.habitLogs = hlog || [];
+    S.akun      = akn || [];
+    S.scosLogs  = scs || [];
     renderPage();
     checkBudgetNotifications();
   } catch(e) {
@@ -240,7 +246,7 @@ function renderPage() {
     case 'budget':     renderBudget();     break;
     case 'kategori':   renderKategori();   break;
     case 'laporan':    renderLaporan();    break;
-    case 'habits':     renderHabits();     break;
+    case 'growth':     renderGrowth();     break;
     case 'pengaturan': renderPengaturan(); break;
   }
 }
@@ -250,17 +256,93 @@ function renderDashboard() {
   const data  = trxBulan();
   const pem   = sumPemasukan(data);
   const pen   = sumPengeluaran(data);
-  const saldo = pem - pen;
 
   document.getElementById('stat-pemasukan').textContent = rp(pem);
   document.getElementById('stat-pengeluaran').textContent = rp(pen);
   
+  // Hitung Saldo Global
+  let saldoAwalGlobal = 0;
+  S.akun.forEach(a => { saldoAwalGlobal += Number(a.saldoAwal) || 0; });
+  const allPem = sumPemasukan(S.transaksi);
+  const allPen = sumPengeluaran(S.transaksi);
+  const totalKekayaan = saldoAwalGlobal + allPem - allPen;
+
   const saldoEl = document.getElementById('stat-saldo');
-  saldoEl.textContent = rp(saldo);
-  saldoEl.style.color = saldo < 0 ? 'var(--expense)' : 'var(--text-1)';
+  saldoEl.textContent = rp(totalKekayaan);
+  saldoEl.style.color = totalKekayaan < 0 ? 'var(--expense)' : 'var(--text-1)';
+
+  // Render Akun/Dompet Horizontal
+  const akunListEl = document.getElementById('dashboard-akun-list');
+  if (S.akun.length === 0) {
+    akunListEl.innerHTML = `<div style="font-size:12px; color:var(--text-3); padding: 8px 16px;">Belum ada dompet. <a href="#" onclick="document.getElementById('modal-akun').classList.remove('hidden'); return false;">+ Tambah Dompet</a></div>`;
+  } else {
+    // Hitung saldo per akun
+    const akunBalances = S.akun.map(a => {
+      let b = Number(a.saldoAwal) || 0;
+      S.transaksi.forEach(t => {
+        if (t.jenis === 'Pemasukan' && t.akunTujuan === a.nama) b += Number(t.jumlah);
+        if (t.jenis === 'Pengeluaran' && t.akunAsal === a.nama) b -= Number(t.jumlah);
+        if (t.jenis === 'Transfer' && t.akunAsal === a.nama) b -= Number(t.jumlah);
+        if (t.jenis === 'Transfer' && t.akunTujuan === a.nama) b += Number(t.jumlah);
+        // Fallback for old transactions without akun
+        if (!t.akunAsal && !t.akunTujuan && S.akun.length === 1) {
+           if (t.jenis === 'Pemasukan') b += Number(t.jumlah);
+           if (t.jenis === 'Pengeluaran') b -= Number(t.jumlah);
+        }
+      });
+      return { ...a, balance: b };
+    });
+    
+    akunListEl.innerHTML = akunBalances.map(a => `
+      <div style="background: var(--bg-base); padding: 12px 16px; border-radius: 16px; min-width: 140px; display: flex; flex-direction: column; gap: 8px; border: 1px solid var(--border); cursor: pointer;" onclick="editAkun('${esc(a.id)}')">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="width: 24px; height: 24px; border-radius: 50%; background: ${a.warna}20; color: ${a.warna}; display: flex; align-items: center; justify-content: center;">
+            <i data-feather="${a.ikon}" style="width:12px; height:12px;"></i>
+          </div>
+          <span style="font-size:12px; font-weight:600;">${esc(a.nama)}</span>
+        </div>
+        <div style="font-size: 14px; font-weight: 700; color: var(--text-1);">${rp(a.balance)}</div>
+      </div>
+    `).join('');
+    // Tombol tambah akun
+    akunListEl.innerHTML += `
+      <div style="background: transparent; padding: 12px; border-radius: 16px; display: flex; align-items: center; justify-content: center; border: 1px dashed var(--border); cursor: pointer;" onclick="openAddAkun()">
+        <i data-feather="plus" style="color:var(--text-3);"></i>
+      </div>
+    `;
+  }
+
+  // SCOS Widget
+  calcSCOSWidget();
 
   renderRecentList(data.slice(0,5));
-  renderChartDonut(data);
+}
+
+function calcSCOSWidget() {
+  const todayDate = today();
+  const logToday = S.scosLogs.find(l => l.tanggal === todayDate);
+  const scoreEl = document.getElementById('widget-stability');
+  if (logToday) {
+    const presence = Number(logToday.presence) || 0;
+    const stress = Number(logToday.stress) || 0;
+    const crit = Number(logToday.criticism) || 0;
+    // Formula sederhana: rata-rata dari (Presence, Kebalikan Stress, Kebalikan Crit) x 10
+    const score = Math.round(((presence + (10 - stress) + (10 - crit)) / 30) * 100);
+    scoreEl.textContent = score;
+    scoreEl.style.color = score > 60 ? 'var(--income)' : (score < 40 ? 'var(--expense)' : 'var(--text-1)');
+  } else {
+    scoreEl.textContent = '-';
+    scoreEl.style.color = 'var(--text-3)';
+  }
+
+  // Habit completion for today
+  const todaysHabits = S.habits.filter(h => h.frekuensi === 'Daily');
+  let completed = 0;
+  todaysHabits.forEach(h => {
+    if(S.habitLogs.find(l => l.habitId === h.id && l.tanggal === todayDate)) completed++;
+  });
+  const pct = todaysHabits.length ? Math.round((completed / todaysHabits.length) * 100) : 0;
+  document.getElementById('widget-habit-path').style.strokeDasharray = `${pct}, 100`;
 }
 
 function renderRecentList(items) {
@@ -422,6 +504,9 @@ function openAddTrx(jenis='Pengeluaran') {
   document.getElementById('trx-jumlah').value = '';
   document.getElementById('trx-keterangan').value = '';
   document.getElementById('trx-catatan').value = '';
+  const selAkun = document.getElementById('trx-akun');
+  selAkun.innerHTML = S.akun.map(a => `<option value="${a.nama}">${a.nama}</option>`).join('');
+  
   setJenis(jenis);
   document.getElementById('modal-trx-title').textContent = 'Tambah Transaksi';
   openModal('modal-trx');
@@ -434,6 +519,12 @@ function openEditTrx(id) {
   document.getElementById('trx-jumlah').value = numInput(t.jumlah);
   document.getElementById('trx-keterangan').value = t.keterangan;
   document.getElementById('trx-catatan').value = t.catatan||'';
+  
+  const selAkun = document.getElementById('trx-akun');
+  selAkun.innerHTML = S.akun.map(a => `<option value="${a.nama}">${a.nama}</option>`).join('');
+  if (t.jenis === 'Pemasukan') selAkun.value = t.akunTujuan || '';
+  else selAkun.value = t.akunAsal || '';
+  
   setJenis(t.jenis);
   setTimeout(()=>{ document.getElementById('trx-kategori').value=t.kategori; },30);
   document.getElementById('modal-trx-title').textContent = 'Edit Transaksi';
@@ -459,19 +550,31 @@ async function submitTrx() {
   const keterangan= document.getElementById('trx-keterangan').value.trim();
   const kategori  = document.getElementById('trx-kategori').value;
   const catatan   = document.getElementById('trx-catatan').value.trim();
+  const akun      = document.getElementById('trx-akun').value;
   const jenis     = S.jenisTrx;
 
-  if (!tanggal||!jumlah||!keterangan||!kategori) { toast('Isi semua field wajib', 'warn'); return; }
+  if (!tanggal||!jumlah||!keterangan||!kategori||!akun) { toast('Isi semua field wajib (termasuk dompet)', 'warn'); return; }
+  
+  const payload = { id, tanggal, jumlah, keterangan, kategori, catatan, jenis };
+  if (jenis === 'Pemasukan') {
+    payload.akunTujuan = akun;
+    payload.akunAsal = '';
+  } else {
+    payload.akunAsal = akun;
+    payload.akunTujuan = '';
+  }
   
   const btn = document.getElementById('btn-submit-trx');
   btn.disabled=true; btn.textContent='Menyimpan...';
 
   try {
     if (id) {
-      await apiPost({action:'updateTransaksi', id, tanggal, jumlah, keterangan, kategori, catatan, jenis});
+      payload.action = 'updateTransaksi';
+      await apiPost(payload);
       toast('Berhasil diupdate');
     } else {
-      await apiPost({action:'addTransaksi', tanggal, jumlah, keterangan, kategori, catatan, jenis});
+      payload.action = 'addTransaksi';
+      await apiPost(payload);
       toast('Berhasil ditambahkan');
     }
     closeModal('modal-trx');
@@ -660,13 +763,19 @@ function updateConnStatus() {
 async function testConn() {
   const url = document.getElementById('input-script-url').value.trim();
   if(!url) return;
+  
+  const oldUrl = CFG.scriptUrl;
+  CFG.scriptUrl = url; // Temporarily use the input URL
+  
   try {
     toast('Menguji koneksi...', 'info');
-    await apiCall({ action:'ping' }); // We can mock ping by changing logic or assume URL works if it doesn't fail
+    await apiCall({ action:'ping' }); // Ping test
     toast('Koneksi berhasil!', 'info');
   } catch(e) {
     toast('Koneksi gagal: pastikan URL Apps Script benar', 'err');
   }
+  
+  CFG.scriptUrl = oldUrl; // Revert
 }
 
 function saveSettings() {
@@ -706,30 +815,10 @@ function applyTheme(isLight) {
 }
 
 // ══ HABITS ════════════════════════════════════════════════════
-function renderHabits() {
+function renderGrowth() {
   const dToday = today();
-  
-  // 1. Stats Calculation
-  let perfectDays = 0;
-  let streak = 0;
-  let currentStreak = 0;
   let allLogs = S.habitLogs || [];
   let habits = S.habits || [];
-  
-  if (habits.length === 0) {
-    document.getElementById('habit-streak-days').textContent = '0';
-    document.getElementById('habit-perfect-days').textContent = '0';
-    document.getElementById('habit-overall-text').textContent = '0%';
-    document.getElementById('habit-overall-path').style.strokeDasharray = '0, 100';
-    
-    document.getElementById('habit-today-list').innerHTML = '<div class="text-center" style="font-size:12px;color:var(--text-3);">Belum ada kebiasaan</div>';
-    document.getElementById('habit-today-pct').textContent = '0%';
-    document.getElementById('habit-today-bar').style.width = '0%';
-    document.getElementById('habit-today-count').textContent = '0 dari 0';
-    
-    renderHeatmap();
-    return;
-  }
   
   // Hitung total completed per hari
   const logsByDate = {};
@@ -738,76 +827,90 @@ function renderHabits() {
     logsByDate[lg.tanggal]++;
   });
 
-  // Urutkan tanggal
-  const sortedDates = Object.keys(logsByDate).sort();
+  // 1. SCOS Metrics Calculation
+  let sumStability = 0;
+  let sumImpulse = 0;
+  let stableDays = 0;
+  const scosCount = S.scosLogs.length;
+
+  S.scosLogs.forEach(log => {
+    const p = Number(log.presence) || 0;
+    const s = Number(log.stress) || 0;
+    const c = Number(log.criticism) || 0;
+    const u = Number(log.urge) || 0;
+    
+    // Stability = Avg(Presence, 10-Stress, 10-Criticism) * 10
+    sumStability += ((p + (10 - s) + (10 - c)) / 30) * 100;
+    // Impulse Pressure = Avg(Stress, Criticism, Urge) * 10
+    sumImpulse += ((s + c + u) / 30) * 100;
+    
+    if (log.outcome === 'Stable') stableDays++;
+  });
+
+  const avgStability = scosCount ? Math.round(sumStability / scosCount) : 0;
+  const avgImpulse = scosCount ? Math.round(sumImpulse / scosCount) : 0;
   
-  // Hitung Perfect Days (hari dimana jumlah log == jumlah habit aktif)
-  // Untuk simplifikasi, anggap semua habit aktif sejak awal
-  for (const d of sortedDates) {
-    if (logsByDate[d] >= habits.length) perfectDays++;
-  }
-  
-  // Streak
-  // (Simplified streak counting backward from today or yesterday)
-  let checkDate = new Date();
-  let streakCount = 0;
-  for(let i=0; i<365; i++) {
-    const ds = checkDate.toISOString().split('T')[0];
-    if (logsByDate[ds] > 0) {
-      streakCount++;
-    } else {
-      if (i > 0) break; // if today is missing, we check yesterday. if yesterday missing, break.
-    }
-    checkDate.setDate(checkDate.getDate() - 1);
-  }
-  
-  // Overall Rate (Total Log / (Total Hari aktif * Total Habit))
-  // Simplified to percentage of today
-  
-  document.getElementById('habit-streak-days').textContent = streakCount;
-  document.getElementById('habit-perfect-days').textContent = perfectDays;
-  
-  // 2. Today's Progress
+  // Discipline Score logic
+  // Simplified: ratio of stable days + ratio of habits done today
   let todayDone = logsByDate[dToday] || 0;
-  let pct = habits.length ? Math.round((todayDone / habits.length) * 100) : 0;
-  
-  document.getElementById('habit-today-count').textContent = `${todayDone} dari ${habits.length}`;
-  document.getElementById('habit-today-pct').textContent = `${pct}%`;
-  document.getElementById('habit-today-bar').style.width = `${pct}%`;
-  
-  document.getElementById('habit-overall-text').textContent = `${pct}%`;
-  document.getElementById('habit-overall-path').style.strokeDasharray = `${pct}, 100`;
+  let pctHabit = habits.length ? (todayDone / habits.length) : 0;
+  let pctStable = scosCount ? (stableDays / scosCount) : 0;
+  let disciplineScore = Math.round(((pctHabit + pctStable) / 2) * 100) || 0;
+  if (!habits.length && !scosCount) disciplineScore = 0;
 
-  // Quote
-  const qTitle = document.getElementById('habit-quote-title');
-  const qDesc = document.getElementById('habit-quote-desc');
-  if (pct === 0) {
-    qTitle.textContent = "Ayo Mulai!"; qDesc.textContent = "Selesaikan satu kebiasaan untuk memulai harimu.";
-  } else if (pct < 100) {
-    qTitle.textContent = "Semangat!"; qDesc.textContent = "Sedikit lagi, selesaikan kebiasaan hari ini.";
+  document.getElementById('scos-stability-score').textContent = avgStability;
+  document.getElementById('scos-discipline-score').textContent = disciplineScore;
+
+  // 2. Insight Engine (AI)
+  const insightEl = document.getElementById('scos-insight-text');
+  const todayScos = S.scosLogs.find(l => l.tanggal === dToday);
+  
+  if (!todayScos) {
+    insightEl.textContent = "Observe, Understand, Improve. Lakukan Daily Check-in hari ini untuk melihat analisanya.";
   } else {
-    qTitle.textContent = "Luar Biasa!"; qDesc.textContent = "Semua target hari ini tercapai. Pertahankan besok!";
+    const s = Number(todayScos.stress) || 0;
+    const c = Number(todayScos.criticism) || 0;
+    const u = Number(todayScos.urge) || 0;
+    const out = todayScos.outcome;
+
+    if (s > 7 && c > 7 && u > 7) {
+      insightEl.textContent = "Kemungkinan besar urge hari ini dipengaruhi tekanan psikologis yang sangat tinggi, bukan murni dorongan fisik. Cobalah bernapas dan rileks.";
+    } else if (c > 8) {
+      insightEl.textContent = "Coba evaluasi diri tanpa menghakimi. Kesalahan adalah data, bukan identitas. Self-criticism Anda hari ini sangat tinggi.";
+    } else if (out === 'Relapse' && avgStability > 60) {
+      insightEl.textContent = "Terjadi peningkatan stabilitas jangka panjang meskipun masih ada relapse hari ini. Fokus pada tren, jangan menyerah!";
+    } else if (out === 'Stable' && u > 7) {
+      insightEl.textContent = "Luar biasa! Dorongan (Urge) Anda sangat tinggi hari ini, tapi Anda berhasil tetap stabil. Discipline otot mental Anda sedang berkembang pesat.";
+    } else {
+      insightEl.textContent = "Kondisi Anda cukup stabil hari ini. Terus bertumbuh, stabil lebih penting daripada sempurna.";
+    }
   }
 
-  // 3. Render Today List
+  // 3. Render Today List (Habits in Grid)
   const listEl = document.getElementById('habit-today-list');
-  listEl.innerHTML = habits.map(h => {
-    const isDone = allLogs.find(lg => lg.habitId === h.id && lg.tanggal === dToday);
-    return `
-      <div class="card" style="display: flex; align-items: center; justify-content: space-between; padding: 16px; border-radius: 16px; margin:0;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <div style="color: var(--text-1);"><i data-feather="${h.ikon || 'check-circle'}" style="width: 20px; height: 20px;"></i></div>
+  document.getElementById('habit-today-count').textContent = `${todayDone} dari ${habits.length}`;
+
+  if (habits.length === 0) {
+    listEl.innerHTML = '<div style="font-size:12px;color:var(--text-3); grid-column: 1 / -1;">Belum ada kebiasaan.</div>';
+  } else {
+    listEl.innerHTML = habits.map(h => {
+      const isDone = allLogs.find(lg => lg.habitId === h.id && lg.tanggal === dToday);
+      return `
+        <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; padding: 12px; border-radius: 16px; margin:0; border: 1px solid var(--border); box-shadow: none;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+            <div style="color: var(--text-1); background: var(--bg-base); padding: 8px; border-radius: 50%;"><i data-feather="${h.ikon || 'check-circle'}" style="width: 16px; height: 16px;"></i></div>
+            <button class="habit-check-btn ${isDone ? 'done' : ''}" style="width: 24px; height: 24px;" onclick="toggleHabit('${h.id}', this)">
+              <i data-feather="check" style="width: 12px; height: 12px;"></i>
+            </button>
+          </div>
           <div>
-            <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 2px;">${esc(h.nama)}</h4>
-            <span style="font-size: 11px; color: var(--text-3);">${esc(h.target)}</span>
+            <h4 style="font-size: 13px; font-weight: 600; margin-bottom: 2px;">${esc(h.nama)}</h4>
+            <span style="font-size: 10px; color: var(--text-3);">${esc(h.target)}</span>
           </div>
         </div>
-        <button class="habit-check-btn ${isDone ? 'done' : ''}" onclick="toggleHabit('${h.id}', this)">
-          <i data-feather="check"></i>
-        </button>
-      </div>
-    `;
-  }).join('');
+      `;
+    }).join('');
+  }
   
   renderHeatmap(logsByDate, habits.length);
   updateIcons();
@@ -890,6 +993,122 @@ async function submitHabit() {
   btn.textContent = 'Simpan';
 }
 
+// ─── SCOS, AKUN & TRANSFER LOGIC ─────────────────────────────
+function openAddSCOS() {
+  const dToday = today();
+  const logToday = S.scosLogs.find(l => l.tanggal === dToday);
+  if (logToday) {
+    document.getElementById('scos-stress').value = logToday.stress || 0;
+    document.getElementById('scos-criticism').value = logToday.criticism || 0;
+    document.getElementById('scos-urge').value = logToday.urge || 0;
+    document.getElementById('scos-presence').value = logToday.presence || 5;
+    document.getElementById('scos-outcome').value = logToday.outcome || 'Stable';
+    document.getElementById('scos-respect').value = logToday.selfRespect || 'Yes';
+    document.getElementById('scos-notes').value = logToday.notes || '';
+  } else {
+    document.getElementById('scos-stress').value = 0;
+    document.getElementById('scos-criticism').value = 0;
+    document.getElementById('scos-urge').value = 0;
+    document.getElementById('scos-presence').value = 5;
+    document.getElementById('scos-outcome').value = 'Stable';
+    document.getElementById('scos-respect').value = 'Yes';
+    document.getElementById('scos-notes').value = '';
+  }
+  openModal('modal-scos');
+}
+
+async function submitSCOS() {
+  const payload = {
+    action: 'addSCOS',
+    tanggal: today(),
+    stress: document.getElementById('scos-stress').value,
+    criticism: document.getElementById('scos-criticism').value,
+    urge: document.getElementById('scos-urge').value,
+    presence: document.getElementById('scos-presence').value,
+    outcome: document.getElementById('scos-outcome').value,
+    selfRespect: document.getElementById('scos-respect').value,
+    notes: document.getElementById('scos-notes').value
+  };
+  const btn = document.getElementById('btn-submit-scos');
+  btn.textContent = '...';
+  try {
+    await apiPost(payload);
+    toast('SCOS Check-in tersimpan');
+    closeModal('modal-scos');
+    S.scosLogs = await apiGet({ action: 'getSCOS' });
+    if(S.page === 'growth') renderGrowth();
+    else if(S.page === 'dashboard') renderDashboard();
+  } catch(e) { toast(e.message, 'err'); }
+  btn.textContent = 'Simpan Check-in';
+}
+
+function openAddAkun() {
+  document.getElementById('akun-id').value = '';
+  document.getElementById('akun-nama').value = '';
+  document.getElementById('akun-saldo').value = '';
+  openModal('modal-akun');
+}
+
+async function submitAkun() {
+  const nama = document.getElementById('akun-nama').value.trim();
+  if(!nama) return toast('Nama dompet wajib diisi','warn');
+  const payload = {
+    action: 'addAkun',
+    nama: nama,
+    saldoAwal: parseNum(document.getElementById('akun-saldo').value)
+  };
+  const btn = document.getElementById('btn-submit-akun');
+  btn.textContent = '...';
+  try {
+    await apiPost(payload);
+    toast('Dompet tersimpan');
+    closeModal('modal-akun');
+    S.akun = await apiGet({ action: 'getAkun' });
+    if(S.page === 'dashboard') renderDashboard();
+  } catch(e) { toast(e.message, 'err'); }
+  btn.textContent = 'Simpan Dompet';
+}
+
+function openAddTransfer() {
+  if (S.akun.length < 2) return toast('Minimal harus ada 2 dompet untuk transfer','warn');
+  const selAsal = document.getElementById('transfer-asal');
+  const selTuj = document.getElementById('transfer-tujuan');
+  selAsal.innerHTML = S.akun.map(a => `<option value="${a.nama}">${a.nama}</option>`).join('');
+  selTuj.innerHTML = S.akun.map(a => `<option value="${a.nama}">${a.nama}</option>`).join('');
+  document.getElementById('transfer-tanggal').value = today();
+  document.getElementById('transfer-jumlah').value = '';
+  openModal('modal-transfer');
+}
+
+async function submitTransfer() {
+  const asal = document.getElementById('transfer-asal').value;
+  const tujuan = document.getElementById('transfer-tujuan').value;
+  const jumlah = parseNum(document.getElementById('transfer-jumlah').value);
+  if(asal === tujuan) return toast('Dompet asal dan tujuan tidak boleh sama','warn');
+  if(jumlah <= 0) return toast('Nominal harus lebih dari 0','warn');
+
+  const payload = {
+    action: 'addTransaksi',
+    tanggal: document.getElementById('transfer-tanggal').value,
+    keterangan: `Transfer dari ${asal} ke ${tujuan}`,
+    kategori: 'Transfer',
+    jenis: 'Transfer',
+    jumlah: jumlah,
+    akunAsal: asal,
+    akunTujuan: tujuan
+  };
+  const btn = document.getElementById('btn-submit-transfer');
+  btn.textContent = '...';
+  try {
+    await apiPost(payload);
+    toast('Transfer berhasil');
+    closeModal('modal-transfer');
+    S.transaksi = await apiGet({ action: 'getTransaksi' });
+    if(S.page === 'dashboard') renderDashboard();
+  } catch(e) { toast(e.message, 'err'); }
+  btn.textContent = 'Transfer';
+}
+
 // ══ INIT & EVENTS ═════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
   // Bind Nav
@@ -902,6 +1121,8 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-fab-out')?.addEventListener('click', ()=>{ closeModal('modal-fab'); openAddTrx('Pengeluaran'); });
   document.getElementById('btn-fab-in')?.addEventListener('click', ()=>{ closeModal('modal-fab'); openAddTrx('Pemasukan'); });
   document.getElementById('btn-fab-habit')?.addEventListener('click', ()=>{ closeModal('modal-fab'); openAddHabit(); });
+  document.getElementById('btn-fab-scos')?.addEventListener('click', ()=>{ closeModal('modal-fab'); openAddSCOS(); });
+  document.getElementById('btn-fab-transfer')?.addEventListener('click', ()=>{ closeModal('modal-fab'); openAddTransfer(); });
   
   document.getElementById('btn-nav-budget')?.addEventListener('click', ()=>goTo('budget'));
   document.getElementById('btn-nav-kategori')?.addEventListener('click', ()=>goTo('kategori'));
@@ -923,6 +1144,9 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-submit-budget')?.addEventListener('click', submitBudget);
   document.getElementById('btn-submit-kat')?.addEventListener('click', submitKat);
   document.getElementById('btn-submit-habit')?.addEventListener('click', submitHabit);
+  document.getElementById('btn-submit-akun')?.addEventListener('click', submitAkun);
+  document.getElementById('btn-submit-transfer')?.addEventListener('click', submitTransfer);
+  document.getElementById('btn-submit-scos')?.addEventListener('click', submitSCOS);
   
   // Export
   document.getElementById('btn-export-csv')?.addEventListener('click', exportCSV);

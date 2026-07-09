@@ -10,14 +10,18 @@ const SHEET_BUDGET     = 'Budget';
 const SHEET_PENGATURAN = 'Pengaturan';
 const SHEET_HABITS     = 'Habits';
 const SHEET_HABIT_LOGS = 'HabitLogs';
+const SHEET_AKUN       = 'Akun';
+const SHEET_SCOS_LOGS  = 'SCOSLogs';
 
 const HEADERS = {
-  Transaksi:  ['ID', 'Tanggal', 'Keterangan', 'Kategori', 'Jenis', 'Jumlah', 'Catatan', 'Dibuat'],
+  Transaksi:  ['ID', 'Tanggal', 'Keterangan', 'Kategori', 'Jenis', 'Jumlah', 'Catatan', 'Dibuat', 'AkunAsal', 'AkunTujuan'],
   Kategori:   ['ID', 'Nama', 'Jenis', 'Icon', 'Warna'],
   Budget:     ['ID', 'Kategori', 'Bulan', 'Limit'],
   Pengaturan: ['Key', 'Value'],
   Habits:     ['ID', 'Nama', 'Tipe', 'Target', 'Frekuensi', 'Waktu', 'Ikon', 'Dibuat'],
-  HabitLogs:  ['ID', 'HabitID', 'Tanggal', 'Value']
+  HabitLogs:  ['ID', 'HabitID', 'Tanggal', 'Value'],
+  Akun:       ['ID', 'Nama', 'Jenis', 'SaldoAwal', 'Ikon', 'Warna'],
+  SCOSLogs:   ['ID', 'Tanggal', 'Stress', 'Criticism', 'Urge', 'Presence', 'Outcome', 'SelfRespect', 'Notes']
 };
 
 const DEFAULT_KATEGORI = [
@@ -68,9 +72,15 @@ function doGet(e) {
       case 'deleteHabit':    result = deleteHabit(params);      break;
       case 'getHabitLogs':   result = getHabitLogs(params);     break;
       case 'toggleHabitLog': result = toggleHabitLog(params);   break;
+      case 'getAkun':        result = getAkun();                break;
+      case 'addAkun':        result = addAkun(params);          break;
+      case 'updateAkun':     result = updateAkun(params);       break;
+      case 'deleteAkun':     result = deleteAkun(params);       break;
+      case 'getSCOS':        result = getSCOS(params);          break;
+      case 'addSCOS':        result = addSCOS(params);          break;
       case 'ping': result = { message: 'pong', ts: new Date().toISOString() }; break;
       case undefined: case null: case '':
-        result = { app:'FinanceMe API', status:'running', version:'1.0.0',
+        result = { app:'FinanceMe API', status:'running', version:'2.0.0',
                    message:'API berjalan normal!', ts: new Date().toISOString() };
         break;
       default: throw new Error('Action tidak dikenal: ' + action);
@@ -192,8 +202,11 @@ function getTransaksi(params) {
 function addTransaksi(p) {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_TRANSAKSI);
   const id = generateId('TRX');
-  sheet.appendRow([id, p.tanggal, p.keterangan, p.kategori, p.jenis,
-    parseFloat(p.jumlah) || 0, p.catatan || '', new Date().toISOString()]);
+  sheet.appendRow([
+    id, p.tanggal, p.keterangan, p.kategori, p.jenis,
+    parseFloat(p.jumlah) || 0, p.catatan || '', new Date().toISOString(),
+    p.akunAsal || '', p.akunTujuan || ''
+  ]);
   return { id: id, message: 'Transaksi berhasil ditambahkan' };
 }
 
@@ -201,9 +214,10 @@ function updateTransaksi(p) {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_TRANSAKSI);
   const row = findRowById(sheet, p.id);
   if (row < 0) throw new Error('Transaksi tidak ditemukan: ' + p.id);
-  sheet.getRange(row, 2, 1, 6).setValues([[
+  sheet.getRange(row, 2, 1, 9).setValues([[
     p.tanggal, p.keterangan, p.kategori, p.jenis,
-    parseFloat(p.jumlah) || 0, p.catatan || ''
+    parseFloat(p.jumlah) || 0, p.catatan || '', new Date().toISOString(),
+    p.akunAsal || '', p.akunTujuan || ''
   ]]);
   return { message: 'Transaksi berhasil diupdate' };
 }
@@ -364,5 +378,62 @@ function toggleHabitLog(p) {
     sheet.appendRow([id, p.habitId, p.tanggal, "1"]);
     return { message: 'Log habit dicatat' };
   }
-  return { message: 'Tidak ada tindakan' };
+    return { message: 'Tidak ada tindakan' };
+  }
+
+// ─── AKUN (DOMPET) ──────────────────────────────────────────
+function getAkun() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_AKUN);
+  return sheetToObjects(sheet);
+}
+
+function addAkun(p) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_AKUN);
+  const id = generateId('AKN');
+  sheet.appendRow([id, p.nama, p.jenis || 'Bank', p.saldoAwal || 0, p.ikon || 'credit-card', p.warna || '#111111']);
+  return { id: id, message: 'Akun berhasil ditambahkan' };
+}
+
+function updateAkun(p) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_AKUN);
+  const row = findRowById(sheet, p.id);
+  if (row < 0) throw new Error('Akun tidak ditemukan');
+  sheet.getRange(row, 2, 1, 5).setValues([[p.nama, p.jenis || 'Bank', p.saldoAwal || 0, p.ikon || 'credit-card', p.warna || '#111111']]);
+  return { message: 'Akun berhasil diupdate' };
+}
+
+function deleteAkun(p) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_AKUN);
+  const row = findRowById(sheet, p.id);
+  if (row < 0) throw new Error('Akun tidak ditemukan');
+  sheet.deleteRow(row);
+  return { message: 'Akun berhasil dihapus' };
+}
+
+// ─── SCOS LOGS ──────────────────────────────────────────────
+function getSCOS() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_SCOS_LOGS);
+  return sheetToObjects(sheet);
+}
+
+function addSCOS(p) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_SCOS_LOGS);
+  const id = generateId('SCS');
+  // Overwrite if same date exists
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][1]) === String(p.tanggal)) {
+      sheet.getRange(i + 1, 3, 1, 7).setValues([[
+        p.stress || 0, p.criticism || 0, p.urge || 0, p.presence || 0, 
+        p.outcome || 'Stable', p.selfRespect || 'Yes', p.notes || ''
+      ]]);
+      return { message: 'SCOS harian berhasil diupdate' };
+    }
+  }
+  
+  sheet.appendRow([
+    id, p.tanggal, p.stress || 0, p.criticism || 0, p.urge || 0, p.presence || 0, 
+    p.outcome || 'Stable', p.selfRespect || 'Yes', p.notes || ''
+  ]);
+  return { id: id, message: 'SCOS harian berhasil ditambahkan' };
 }

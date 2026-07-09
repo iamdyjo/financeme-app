@@ -34,10 +34,10 @@
   <header class="top-bar">
     <div class="user-greeting">
       <p id="month-label">Juli 2026</p>
-      <h1>Halo, User</h1>
+      <h1>Selamat Pagi</h1>
     </div>
-    <div class="user-avatar" id="btn-pengaturan">
-      <i data-feather="user"></i>
+    <div class="user-avatar" id="btn-pengaturan" style="background: none; border: 1px solid var(--border);">
+      <i data-feather="settings" style="color: var(--text-1); width: 20px; height: 20px;"></i>
     </div>
   </header>
 
@@ -46,56 +46,48 @@
 
     <!-- ── DASHBOARD ── -->
     <section id="page-dashboard" class="page">
+      <!-- Total Saldo Global -->
       <div class="card balance-card">
-        <span class="balance-label">Total Saldo</span>
+        <span class="balance-label">Total Kekayaan</span>
         <h2 class="balance-amount" id="stat-saldo">Rp 0</h2>
-        
-        <div class="quick-actions">
-          <button class="action-btn" id="btn-add-trx-in">
-            <div class="action-icon" style="color: var(--income)"><i data-feather="arrow-down-left"></i></div>
-            <span class="action-label">Masuk</span>
-          </button>
-          <button class="action-btn" id="btn-add-trx-out">
-            <div class="action-icon" style="color: var(--expense)"><i data-feather="arrow-up-right"></i></div>
-            <span class="action-label">Keluar</span>
-          </button>
-          <button class="action-btn" id="btn-nav-budget">
-            <div class="action-icon"><i data-feather="pie-chart"></i></div>
-            <span class="action-label">Budget</span>
-          </button>
-          <button class="action-btn" id="btn-nav-kategori">
-            <div class="action-icon"><i data-feather="grid"></i></div>
-            <span class="action-label">Kategori</span>
-          </button>
+        <div style="margin-top: 16px; display: flex; gap: 8px;">
+          <div style="flex:1; background: rgba(255,255,255,0.1); padding: 8px 12px; border-radius: 12px;">
+            <div style="font-size: 11px; opacity: 0.8; margin-bottom: 4px;">Pemasukan</div>
+            <div id="stat-pemasukan" style="font-size: 14px; font-weight: 600;">Rp 0</div>
+          </div>
+          <div style="flex:1; background: rgba(255,255,255,0.1); padding: 8px 12px; border-radius: 12px;">
+            <div style="font-size: 11px; opacity: 0.8; margin-bottom: 4px;">Pengeluaran</div>
+            <div id="stat-pengeluaran" style="font-size: 14px; font-weight: 600;">Rp 0</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- List Dompet/Akun Horizontal -->
+      <div id="dashboard-akun-list" style="display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 8px; margin-top: -8px;">
+        <!-- Akan di-render via JS -->
+      </div>
+
+      <!-- SCOS Widget / Life OS Snippet -->
+      <div class="card" style="padding: 16px; border: 1px solid var(--border); box-shadow: none; display: flex; align-items: center; justify-content: space-between; cursor: pointer;" onclick="document.getElementById('btn-nav-growth').click();">
+        <div>
+          <div style="font-size: 12px; color: var(--text-3); font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">Mind & Habits</div>
+          <div style="font-size: 16px; font-weight: 700; color: var(--text-1);">Stability Score: <span id="widget-stability">0</span></div>
+        </div>
+        <div style="width: 48px; height: 48px; position: relative;">
+           <svg viewBox="0 0 36 36" style="width: 100%; height: 100%; transform: rotate(-90deg);">
+             <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--border)" stroke-width="4"></path>
+             <path id="widget-habit-path" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--text-1)" stroke-width="4" stroke-dasharray="0, 100"></path>
+           </svg>
         </div>
       </div>
 
-      <div class="grid-2">
-        <div class="card" style="padding: 16px; text-align: center;">
-          <span style="font-size: 12px; font-weight: 600; color: var(--text-3); text-transform: uppercase;">Pemasukan</span>
-          <p id="stat-pemasukan" style="font-weight: 700; color: var(--income); margin-top: 4px;">Rp 0</p>
-        </div>
-        <div class="card" style="padding: 16px; text-align: center;">
-          <span style="font-size: 12px; font-weight: 600; color: var(--text-3); text-transform: uppercase;">Pengeluaran</span>
-          <p id="stat-pengeluaran" style="font-weight: 700; color: var(--text-1); margin-top: 4px;">Rp 0</p>
-        </div>
-      </div>
-
+      <!-- Riwayat Transaksi -->
       <div class="card">
         <div class="card-header">
           <h3>Transaksi Terbaru</h3>
-          <a href="#" class="nav-link" data-page="transaksi" style="font-size: 14px; color: var(--text-3);">Lihat semua</a>
+          <a href="#" class="nav-link" data-page="transaksi" style="font-size: 14px; color: var(--text-3);" onclick="document.getElementById('btn-nav-trx').click(); return false;">Lihat semua</a>
         </div>
         <div id="recent-list"></div>
-      </div>
-      
-      <div class="card">
-        <div class="card-header">
-          <h3>Komposisi Pengeluaran</h3>
-        </div>
-        <div style="position: relative; height: 200px; width: 100%;">
-          <canvas id="chart-donut"></canvas>
-        </div>
       </div>
     </section>
 
@@ -216,33 +208,38 @@
       </div>
     </section>
 
-    <!-- ── HABITS ── -->
-    <section id="page-habits" class="page hidden">
-      <!-- Ringkasan Statistik -->
-      <div class="card grid-3" style="text-align: center; gap: 8px; padding: 20px 16px;">
-        <div>
-          <span style="font-size: 12px; font-weight: 500; color: var(--text-3);">Overall Rate</span>
-          <div style="position: relative; width: 64px; height: 64px; margin: 8px auto;">
-            <svg viewBox="0 0 36 36" style="width: 100%; height: 100%; transform: rotate(-90deg);">
-              <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--border)" stroke-width="3"></path>
-              <path id="habit-overall-path" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--text-1)" stroke-width="3" stroke-dasharray="0, 100"></path>
-            </svg>
-            <div id="habit-overall-text" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: 700; font-size: 14px;">0%</div>
+    <!-- ── GROWTH (SCOS & HABITS) ── -->
+    <section id="page-growth" class="page hidden">
+      <!-- KPI SCOS (Grid) -->
+      <div class="grid-2">
+        <div class="card" style="padding: 16px; display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <span style="font-size: 11px; font-weight: 600; color: var(--text-3); text-transform: uppercase;">Stability</span>
+            <div id="scos-stability-score" style="font-size: 24px; font-weight: 700; margin-top: 4px; color: var(--income);">0</div>
           </div>
+          <i data-feather="activity" style="color: var(--income); opacity: 0.5;"></i>
         </div>
-        <div>
-          <span style="font-size: 12px; font-weight: 500; color: var(--text-3);">Streak Days</span>
-          <h2 id="habit-streak-days" style="margin-top: 16px; font-size: 28px;">0</h2>
-          <span style="font-size: 12px; color: var(--text-3);">Hari</span>
-        </div>
-        <div>
-          <span style="font-size: 12px; font-weight: 500; color: var(--text-3);">Perfect Days</span>
-          <h2 id="habit-perfect-days" style="margin-top: 16px; font-size: 28px;">0</h2>
-          <span style="font-size: 12px; color: var(--text-3);">Hari</span>
+        <div class="card" style="padding: 16px; display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <span style="font-size: 11px; font-weight: 600; color: var(--text-3); text-transform: uppercase;">Discipline</span>
+            <div id="scos-discipline-score" style="font-size: 24px; font-weight: 700; margin-top: 4px; color: var(--text-1);">0</div>
+          </div>
+          <i data-feather="shield" style="color: var(--text-1); opacity: 0.5;"></i>
         </div>
       </div>
 
-      <!-- Kalender Bulanan (Heatmap) -->
+      <!-- AI Insight Engine -->
+      <div class="card" style="background: var(--text-1); color: white; padding: 20px;">
+        <div style="display: flex; gap: 12px; align-items: flex-start;">
+          <i data-feather="cpu" style="color: var(--income);"></i>
+          <div>
+            <h4 style="font-size: 14px; margin-bottom: 6px;">AI Insight</h4>
+            <p id="scos-insight-text" style="font-size: 13px; line-height: 1.5; opacity: 0.9;">Observe, Understand, Improve. Lacak kondisi mentalmu setiap hari.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Kalender Bulanan (Heatmap Habits) -->
       <div class="card">
         <div class="card-header" style="justify-content: center; position: relative;">
           <button id="btn-habit-prev-month" style="position: absolute; left: 0; background: none; border: none; padding: 4px; cursor: pointer;"><i data-feather="chevron-left"></i></button>
@@ -267,15 +264,15 @@
         </div>
       </div>
 
-      <!-- Today's Habit -->
+      <!-- Today's Habit (Grid) -->
       <div>
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 4px; margin-top: 16px;">
           <h3 style="font-size: 16px; font-weight: 600;">Today's Habit</h3>
           <span id="habit-today-count" style="font-size: 12px; color: var(--text-3);">0 dari 0</span>
         </div>
         
-        <div id="habit-today-list" style="display: flex; flex-direction: column; gap: 12px;">
-          <!-- List Habits via JS -->
+        <div id="habit-today-list" class="grid-2">
+          <!-- List Habits via JS di-render jadi grid-card -->
         </div>
       </div>
 
@@ -328,9 +325,9 @@
       <i data-feather="pie-chart"></i>
       <span class="nav-label">Budget</span>
     </button>
-    <button class="nav-item" data-page="habits" aria-label="Habits">
-      <i data-feather="check-square"></i>
-      <span class="nav-label">Habits</span>
+    <button class="nav-item" data-page="growth" aria-label="Growth">
+      <i data-feather="sun"></i>
+      <span class="nav-label">Growth</span>
     </button>
   </nav>
 
@@ -375,9 +372,15 @@
         </div>
       </div>
       
-      <div class="form-group mb-16">
-        <label class="form-label">Catatan (Opsional)</label>
-        <input type="text" id="trx-catatan" class="form-input" placeholder="Deskripsi tambahan">
+      <div class="grid-2">
+        <div class="form-group mb-16">
+          <label class="form-label">Akun/Dompet</label>
+          <select id="trx-akun" class="form-select"></select>
+        </div>
+        <div class="form-group mb-16">
+          <label class="form-label">Catatan (Opsional)</label>
+          <input type="text" id="trx-catatan" class="form-input" placeholder="Deskripsi tambahan">
+        </div>
       </div>
       
       <button class="btn-primary" id="btn-submit-trx">Simpan</button>
@@ -445,16 +448,136 @@
       <button class="modal-close" data-close="modal-fab" style="position: absolute; right: 0; background: none; border: none;"><i data-feather="x"></i></button>
     </div>
     
-    <div class="modal-body" style="display: flex; flex-direction: column; gap: 12px;">
-      <button class="btn-secondary" id="btn-fab-out" style="justify-content: flex-start; padding: 16px; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+    <div style="display: flex; flex-direction: column; gap: 4px;">
+      <button class="btn-secondary" id="btn-fab-out" style="justify-content: flex-start; padding: 16px; border: none; box-shadow: none;">
         <i data-feather="arrow-up-right" style="color: var(--expense); margin-right: 12px;"></i> Tambah Pengeluaran
       </button>
-      <button class="btn-secondary" id="btn-fab-in" style="justify-content: flex-start; padding: 16px; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+      <button class="btn-secondary" id="btn-fab-in" style="justify-content: flex-start; padding: 16px; border: none; box-shadow: none;">
         <i data-feather="arrow-down-left" style="color: var(--income); margin-right: 12px;"></i> Tambah Pemasukan
+      </button>
+      <button class="btn-secondary" id="btn-fab-transfer" style="justify-content: flex-start; padding: 16px; border: none; box-shadow: none;">
+        <i data-feather="refresh-cw" style="color: var(--text-2); margin-right: 12px;"></i> Transfer antar Dompet
+      </button>
+      <div style="height: 1px; background: var(--border); margin: 8px 16px;"></div>
+      <button class="btn-secondary" id="btn-fab-scos" style="justify-content: flex-start; padding: 16px; border: none; box-shadow: none;">
+        <i data-feather="smile" style="color: var(--text-1); margin-right: 12px;"></i> SCOS Daily Check-in
       </button>
       <button class="btn-secondary" id="btn-fab-habit" style="justify-content: flex-start; padding: 16px; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
         <i data-feather="check-square" style="color: var(--text-1); margin-right: 12px;"></i> Tambah Habit Baru
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL TRANSFER ── -->
+<div id="modal-transfer" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-transfer-title">Transfer Dana</h2>
+      <button class="modal-close" data-close="modal-transfer"><i data-feather="x"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Nominal Transfer</label>
+        <div style="position: relative;">
+          <span style="position: absolute; left: 16px; top: 14px; font-weight: 600; font-size: 16px;">Rp</span>
+          <input type="text" id="transfer-jumlah" class="form-input" style="padding-left: 48px; font-weight: 700; font-size: 18px;" placeholder="0" inputmode="numeric">
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Dari Dompet</label>
+          <select id="transfer-asal" class="form-select"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Ke Dompet</label>
+          <select id="transfer-tujuan" class="form-select"></select>
+        </div>
+      </div>
+      <div class="form-group mb-16">
+        <label class="form-label">Tanggal</label>
+        <input type="date" id="transfer-tanggal" class="form-input">
+      </div>
+      <button class="btn-primary" id="btn-submit-transfer">Transfer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL SCOS CHECK-IN ── -->
+<div id="modal-scos" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>SCOS Daily Check-in</h2>
+      <button class="modal-close" data-close="modal-scos"><i data-feather="x"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Tingkat Stres (0-10)</label>
+        <input type="range" id="scos-stress" min="0" max="10" value="0" class="form-range" style="width:100%; margin:8px 0;">
+        <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-3);"><span>0 (Tenang)</span><span>10 (Panik/Sangat Stres)</span></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Self-Criticism (0-10)</label>
+        <input type="range" id="scos-criticism" min="0" max="10" value="0" class="form-range" style="width:100%; margin:8px 0;">
+        <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-3);"><span>0 (Penuh Welas Asih)</span><span>10 (Sangat Menghakimi Diri)</span></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Urge / Dorongan Impuls (0-10)</label>
+        <input type="range" id="scos-urge" min="0" max="10" value="0" class="form-range" style="width:100%; margin:8px 0;">
+        <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-3);"><span>0 (Tidak Ada)</span><span>10 (Sangat Kuat)</span></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tingkat Kehadiran / Presence (0-10)</label>
+        <input type="range" id="scos-presence" min="0" max="10" value="5" class="form-range" style="width:100%; margin:8px 0;">
+        <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-3);"><span>0 (Dissociated/Kosong)</span><span>10 (Sangat Hadir & Sadar)</span></div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Hasil (Outcome)</label>
+          <select id="scos-outcome" class="form-select">
+            <option value="Stable">Stable</option>
+            <option value="Lapse">Lapse (Berhenti Awal)</option>
+            <option value="Relapse">Relapse</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Self-Respect Hari ini?</label>
+          <select id="scos-respect" class="form-select">
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group mb-16">
+        <label class="form-label">Jurnal (Maksimal 2 Kalimat)</label>
+        <input type="text" id="scos-notes" class="form-input" placeholder="Tulis refleksi singkat...">
+      </div>
+      <button class="btn-primary" id="btn-submit-scos">Simpan Check-in</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL AKUN ── -->
+<div id="modal-akun" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-akun-title">Tambah Dompet</h2>
+      <button class="modal-close" data-close="modal-akun"><i data-feather="x"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="akun-id">
+      <div class="form-group">
+        <label class="form-label">Nama Dompet (Misal: BCA, Gopay)</label>
+        <input type="text" id="akun-nama" class="form-input" placeholder="BCA">
+      </div>
+      <div class="form-group mb-16">
+        <label class="form-label">Saldo Awal</label>
+        <div style="position: relative;">
+          <span style="position: absolute; left: 16px; top: 14px; font-weight: 600; font-size: 16px;">Rp</span>
+          <input type="text" id="akun-saldo" class="form-input" style="padding-left: 48px; font-weight: 700;" placeholder="0" inputmode="numeric">
+        </div>
+      </div>
+      <button class="btn-primary" id="btn-submit-akun">Simpan Dompet</button>
     </div>
   </div>
 </div>

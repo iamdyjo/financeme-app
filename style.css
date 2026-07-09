@@ -37,6 +37,25 @@
   --nav-height: 70px;
 }
 
+body.dark-mode {
+  --bg-base: #111111;
+  --bg-card: #1C1C1E;
+  --text-1: #FFFFFF;
+  --text-2: #A1A1AA;
+  --text-3: #71717A;
+  
+  --income: #34D399;
+  --income-bg: rgba(52, 211, 153, 0.15);
+  --expense: #F87171;
+  --expense-bg: rgba(248, 113, 113, 0.15);
+  
+  --border: #2C2C2E;
+  --border-focus: #FFFFFF;
+  
+  --shadow-card: 0 8px 30px rgba(0, 0, 0, 0.2);
+  --shadow-nav: 0 12px 40px rgba(0, 0, 0, 0.3);
+}
+
 /* ── RESET & BASE ───────────────────────────────────────── */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
