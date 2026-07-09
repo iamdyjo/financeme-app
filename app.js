@@ -117,6 +117,81 @@ function apiCall(params) {
 const apiGet = apiCall;
 const apiPost = apiCall;
 
+// ══ CUSTOM SELECT SYSTEM ══════════════════════════════════════
+const CS = {
+  _options: {},   // options per selectId
+  _placeholders: {},
+  _current: null,
+
+  // Register options for a custom select trigger
+  setOptions(selectId, options, placeholder) {
+    CS._options[selectId] = options;
+    if (placeholder) CS._placeholders[selectId] = placeholder;
+    // Refresh label if value already set
+    const val = (document.getElementById(selectId) || {}).value || '';
+    const found = options.find(o => o.value === val);
+    CS._updateLabel(selectId, found ? found.label : null);
+  },
+
+  // Programmatically set value and update label
+  setValue(selectId, value) {
+    const el = document.getElementById(selectId);
+    if (el) el.value = value;
+    const options = CS._options[selectId] || [];
+    const found = options.find(o => o.value === value);
+    CS._updateLabel(selectId, found ? found.label : null);
+  },
+
+  // Open the bottom-sheet picker
+  open(selectId, title) {
+    CS._current = selectId;
+    const options = CS._options[selectId] || [];
+    const currentVal = (document.getElementById(selectId) || {}).value || '';
+    const titleEl = document.getElementById('cs-overlay-title');
+    if (titleEl) titleEl.textContent = title || CS._placeholders[selectId] || 'Pilih';
+
+    const container = document.getElementById('cs-options-list');
+    if (!container) return;
+    container.innerHTML = options.map(opt => `
+      <div class="cs-option ${opt.value === currentVal ? 'cs-selected' : ''}"
+           onclick="CS._pick(${JSON.stringify(opt.value)}, ${JSON.stringify(opt.label)})">
+        ${opt.icon ? `<span style="font-size:18px;">${opt.icon}</span>` : ''}
+        <span style="flex:1;">${esc(opt.label)}</span>
+        ${opt.value === currentVal ? '<svg class="cs-option-check" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>' : ''}
+      </div>
+    `).join('');
+
+    openModal('cs-overlay');
+  },
+
+  // Called when an option is tapped
+  _pick(value, label) {
+    const id = CS._current;
+    if (!id) return;
+    const el = document.getElementById(id);
+    if (el) {
+      el.value = value;
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    CS._updateLabel(id, label);
+    closeModal('cs-overlay');
+    CS._current = null;
+  },
+
+  _updateLabel(selectId, label) {
+    const labelEl = document.getElementById('cs-label-' + selectId);
+    if (!labelEl) return;
+    const placeholder = CS._placeholders[selectId] || 'Pilih...';
+    if (label) {
+      labelEl.textContent = label;
+      labelEl.classList.remove('cs-placeholder');
+    } else {
+      labelEl.textContent = placeholder;
+      labelEl.classList.add('cs-placeholder');
+    }
+  }
+};
+
 // ══ DATA LOADING ══════════════════════════════════════════════
 async function loadAll() {
   if (!CFG.scriptUrl) return;
@@ -450,11 +525,21 @@ function renderChartBar() {
 
 // ══ TRANSAKSI PAGE ═════════════════════════════════════════════
 function renderTransaksi() {
-  const fk = document.getElementById('filter-kat');
-  const prev = fk.value;
-  fk.innerHTML = '<option value="">Semua Kategori</option>' + 
-                 S.kategori.map(k=>`<option value="${esc(k.nama)}">${esc(k.nama)}</option>`).join('');
-  fk.value = prev;
+  const prevKat = (document.getElementById('filter-kat') || {}).value || '';
+  
+  // Populate filter-jenis custom select
+  CS.setOptions('filter-jenis', [
+    { value: '', label: 'Semua Jenis' },
+    { value: 'Pemasukan', label: 'Pemasukan' },
+    { value: 'Pengeluaran', label: 'Pengeluaran' },
+  ], 'Semua Jenis');
+
+  // Populate filter-kat custom select
+  const katOptions = [{ value: '', label: 'Semua Kategori' }].concat(
+    S.kategori.map(k => ({ value: k.nama, label: k.nama }))
+  );
+  CS.setOptions('filter-kat', katOptions, 'Semua Kategori');
+  if (prevKat) CS.setValue('filter-kat', prevKat);
   
   applyFilter();
 }
@@ -504,9 +589,12 @@ function openAddTrx(jenis='Pengeluaran') {
   document.getElementById('trx-jumlah').value = '';
   document.getElementById('trx-keterangan').value = '';
   document.getElementById('trx-catatan').value = '';
-  const selAkun = document.getElementById('trx-akun');
-  selAkun.innerHTML = '<option value="">-- Pilih Dompet --</option>' + S.akun.map(a => `<option value="${a.nama}">${a.nama}</option>`).join('');
-  
+  const akunOptions = [{ value: '', label: '-- Pilih Dompet --' }].concat(
+    S.akun.map(a => ({ value: a.nama, label: a.nama }))
+  );
+  CS.setOptions('trx-akun', akunOptions, '-- Pilih Dompet --');
+  CS.setValue('trx-akun', '');
+
   setJenis(jenis);
   document.getElementById('modal-trx-title').textContent = 'Tambah Transaksi';
   openModal('modal-trx');
@@ -520,13 +608,15 @@ function openEditTrx(id) {
   document.getElementById('trx-keterangan').value = t.keterangan;
   document.getElementById('trx-catatan').value = t.catatan||'';
   
-  const selAkun = document.getElementById('trx-akun');
-  selAkun.innerHTML = '<option value="">-- Pilih Dompet --</option>' + S.akun.map(a => `<option value="${a.nama}">${a.nama}</option>`).join('');
-  if (t.jenis === 'Pemasukan') selAkun.value = t.akunTujuan || '';
-  else selAkun.value = t.akunAsal || '';
-  
+  const akunOptions2 = [{ value: '', label: '-- Pilih Dompet --' }].concat(
+    S.akun.map(a => ({ value: a.nama, label: a.nama }))
+  );
+  CS.setOptions('trx-akun', akunOptions2, '-- Pilih Dompet --');
+  const akunVal = t.jenis === 'Pemasukan' ? (t.akunTujuan || '') : (t.akunAsal || '');
+  CS.setValue('trx-akun', akunVal);
+
   setJenis(t.jenis);
-  setTimeout(()=>{ document.getElementById('trx-kategori').value=t.kategori; },30);
+  setTimeout(() => { CS.setValue('trx-kategori', t.kategori); }, 30);
   document.getElementById('modal-trx-title').textContent = 'Edit Transaksi';
   openModal('modal-trx');
 }
@@ -536,11 +626,12 @@ function setJenis(jenis) {
   document.querySelectorAll('#jenis-toggle .seg-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.jenis === jenis);
   });
-  const sel = document.getElementById('trx-kategori');
-  const cur = sel.value;
-  sel.innerHTML = '<option value="">Pilih kategori…</option>' +
-    S.kategori.filter(k=>k.jenis===jenis).map(k=>`<option value="${esc(k.nama)}">${esc(k.nama)}</option>`).join('');
-  if (cur) sel.value = cur;
+  // Reset kategori
+  document.getElementById('trx-kategori').value = '';
+  const katOptions = [{ value: '', label: 'Pilih kategori...' }].concat(
+    S.kategori.filter(k => k.jenis === jenis).map(k => ({ value: k.nama, label: k.nama }))
+  );
+  CS.setOptions('trx-kategori', katOptions, 'Pilih kategori...');
 }
 
 async function submitTrx() {
@@ -627,21 +718,24 @@ function renderBudget() {
 function openAddBudget() {
   document.getElementById('budget-id').value = '';
   document.getElementById('budget-limit').value = '';
-  const sel = document.getElementById('budget-kategori');
-  sel.innerHTML = '<option value="">Pilih kategori…</option>' +
-    S.kategori.filter(k=>k.jenis==='Pengeluaran').map(k=>`<option value="${esc(k.nama)}">${esc(k.nama)}</option>`).join('');
+  const katOpts = [{ value: '', label: 'Pilih kategori...' }].concat(
+    S.kategori.filter(k => k.jenis === 'Pengeluaran').map(k => ({ value: k.nama, label: k.nama }))
+  );
+  CS.setOptions('budget-kategori', katOpts, 'Pilih kategori...');
+  CS.setValue('budget-kategori', '');
   document.getElementById('modal-budget-title').textContent = 'Tambah Budget';
   openModal('modal-budget');
 }
 
 function openEditBudget(id) {
-  const b = S.budget.find(x=>x.id===id); if(!b)return;
+  const b = S.budget.find(x => x.id === id); if (!b) return;
   document.getElementById('budget-id').value = id;
   document.getElementById('budget-limit').value = numInput(b.limit);
-  const sel = document.getElementById('budget-kategori');
-  sel.innerHTML = '<option value="">Pilih kategori…</option>' +
-    S.kategori.filter(k=>k.jenis==='Pengeluaran').map(k=>`<option value="${esc(k.nama)}">${esc(k.nama)}</option>`).join('');
-  setTimeout(()=>{ sel.value=b.kategori; },30);
+  const katOpts2 = [{ value: '', label: 'Pilih kategori...' }].concat(
+    S.kategori.filter(k => k.jenis === 'Pengeluaran').map(k => ({ value: k.nama, label: k.nama }))
+  );
+  CS.setOptions('budget-kategori', katOpts2, 'Pilih kategori...');
+  CS.setValue('budget-kategori', b.kategori);
   document.getElementById('modal-budget-title').textContent = 'Edit Budget';
   openModal('modal-budget');
 }
@@ -1176,10 +1270,11 @@ async function submitAkun() {
 
 function openAddTransfer() {
   if (S.akun.length < 2) return toast('Minimal harus ada 2 dompet untuk transfer','warn');
-  const selAsal = document.getElementById('transfer-asal');
-  const selTuj = document.getElementById('transfer-tujuan');
-  selAsal.innerHTML = S.akun.map(a => `<option value="${a.nama}">${a.nama}</option>`).join('');
-  selTuj.innerHTML = S.akun.map(a => `<option value="${a.nama}">${a.nama}</option>`).join('');
+  const akunOpts = S.akun.map(a => ({ value: a.nama, label: a.nama }));
+  CS.setOptions('transfer-asal', akunOpts, 'Pilih dompet...');
+  CS.setOptions('transfer-tujuan', akunOpts, 'Pilih dompet...');
+  CS.setValue('transfer-asal', S.akun[0]?.nama || '');
+  CS.setValue('transfer-tujuan', S.akun[1]?.nama || '');
   document.getElementById('transfer-tanggal').value = today();
   document.getElementById('transfer-jumlah').value = '';
   openModal('modal-transfer');

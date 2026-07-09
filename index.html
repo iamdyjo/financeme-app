@@ -98,14 +98,14 @@
       <div class="card">
         <input type="search" id="filter-search" class="form-input" placeholder="Cari transaksi..." style="background: var(--bg-base); border: 1px solid var(--border);">
         <div class="grid-2 mt-16" style="gap: 8px;">
-          <select id="filter-jenis" class="form-select" style="background: var(--bg-base); border: 1px solid var(--border);">
-            <option value="">Semua Jenis</option>
-            <option value="Pemasukan">Pemasukan</option>
-            <option value="Pengeluaran">Pengeluaran</option>
-          </select>
-          <select id="filter-kat" class="form-select" style="background: var(--bg-base); border: 1px solid var(--border);">
-            <option value="">Semua Kategori</option>
-          </select>
+          <div class="cs-trigger" id="cs-trigger-filter-jenis" onclick="CS.open('filter-jenis','Semua Jenis')">
+            <span class="cs-label" id="cs-label-filter-jenis">Semua Jenis</span>
+          </div>
+          <input type="hidden" id="filter-jenis" value="">
+          <div class="cs-trigger" id="cs-trigger-filter-kat" onclick="CS.open('filter-kat','Semua Kategori')">
+            <span class="cs-label" id="cs-label-filter-kat">Semua Kategori</span>
+          </div>
+          <input type="hidden" id="filter-kat" value="">
         </div>
       </div>
 
@@ -356,7 +356,10 @@
       
       <div class="form-group">
         <label class="form-label">Kategori</label>
-        <select id="trx-kategori" class="form-select"></select>
+        <div class="cs-trigger" id="cs-trigger-trx-kategori" onclick="CS.open('trx-kategori','Pilih Kategori')">
+          <span class="cs-label cs-placeholder" id="cs-label-trx-kategori">Pilih kategori...</span>
+        </div>
+        <input type="hidden" id="trx-kategori" value="">
       </div>
       
       <div class="grid-2">
@@ -396,7 +399,10 @@
       <input type="hidden" id="budget-id">
       <div class="form-group">
         <label class="form-label">Kategori</label>
-        <select id="budget-kategori" class="form-select"></select>
+        <div class="cs-trigger" id="cs-trigger-budget-kategori" onclick="CS.open('budget-kategori','Pilih Kategori Budget')">
+          <span class="cs-label cs-placeholder" id="cs-label-budget-kategori">Pilih kategori...</span>
+        </div>
+        <input type="hidden" id="budget-kategori" value="">
       </div>
       <div class="form-group mb-16">
         <label class="form-label">Limit Bulanan</label>
@@ -485,11 +491,17 @@
       <div class="grid-2">
         <div class="form-group">
           <label class="form-label">Dari Dompet</label>
-          <select id="transfer-asal" class="form-select"></select>
+          <div class="cs-trigger" id="cs-trigger-transfer-asal" onclick="CS.open('transfer-asal','Dari Dompet')">
+            <span class="cs-label cs-placeholder" id="cs-label-transfer-asal">Pilih dompet...</span>
+          </div>
+          <input type="hidden" id="transfer-asal" value="">
         </div>
         <div class="form-group">
           <label class="form-label">Ke Dompet</label>
-          <select id="transfer-tujuan" class="form-select"></select>
+          <div class="cs-trigger" id="cs-trigger-transfer-tujuan" onclick="CS.open('transfer-tujuan','Ke Dompet')">
+            <span class="cs-label cs-placeholder" id="cs-label-transfer-tujuan">Pilih dompet...</span>
+          </div>
+          <input type="hidden" id="transfer-tujuan" value="">
         </div>
       </div>
       <div class="form-group mb-16">
@@ -709,6 +721,19 @@
       </div>
       
     </div>
+  </div>
+</div>
+
+<!-- ── CUSTOM SELECT OVERLAY ── -->
+<div id="cs-overlay" class="modal-overlay hidden" style="z-index: 350; align-items: flex-end;">
+  <div style="background: var(--bg-card); width: 100%; max-width: 600px; border-radius: 28px 28px 0 0; overflow: hidden;">
+    <div style="padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border);">
+      <span id="cs-overlay-title" style="font-size: 15px; font-weight: 600; color: var(--text-1);">Pilih</span>
+      <button onclick="closeModal('cs-overlay')" style="background: var(--bg-base); border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+        <i data-feather="x" style="width: 15px; height: 15px;"></i>
+      </button>
+    </div>
+    <div id="cs-options-list" style="max-height: 50vh; overflow-y: auto; padding: 6px 0 24px;"></div>
   </div>
 </div>
 

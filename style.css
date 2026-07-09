@@ -210,6 +210,30 @@ select.form-select {
 }
 .form-input:focus, .form-select:focus { border-color: var(--border-focus); }
 
+/* ── Custom Select ── */
+.cs-trigger {
+  height: 52px; border-radius: var(--r-input);
+  background: var(--bg-base); border: 1px solid transparent;
+  padding: 0 40px 0 16px; font-size: 16px; color: var(--text-1);
+  display: flex; align-items: center; cursor: pointer; user-select: none;
+  position: relative; transition: border-color 0.15s, background 0.15s;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 16px center;
+}
+.cs-trigger:active { border-color: var(--border-focus); background-color: var(--bg-card); }
+.cs-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.cs-placeholder { color: var(--text-3); }
+.cs-option {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 20px; cursor: pointer; font-size: 15px; color: var(--text-1);
+  transition: background 0.1s; border-bottom: 1px solid var(--border);
+}
+.cs-option:last-child { border-bottom: none; }
+.cs-option:active { background: var(--bg-base); }
+.cs-option.cs-selected { font-weight: 600; }
+.cs-option-check { margin-left: auto; color: var(--income); flex-shrink: 0; }
+
+
 /* Bottom Nav */
 .bottom-nav {
   position: fixed; bottom: 24px; left: 24px; right: 24px;
