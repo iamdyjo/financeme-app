@@ -248,16 +248,21 @@ select.form-select {
 /* Modals */
 .modal-overlay {
   position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
+  background: rgba(0,0,0,0.5); backdrop-filter: blur(6px);
   z-index: 200; display: flex; align-items: flex-end; justify-content: center;
-  opacity: 1; transition: opacity 0.3s;
+  opacity: 1;
 }
-.modal-overlay.hidden { display: none !important; opacity: 0; }
+.modal-overlay.hidden {
+  display: none !important;
+  pointer-events: none !important;
+  opacity: 0;
+}
 .modal {
   background: var(--bg-card); width: 100%; max-width: 600px;
   border-radius: 32px 32px 0 0; padding: 24px;
   transform: translateY(0); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   max-height: 90vh; overflow-y: auto; overflow-x: hidden;
+  position: relative; z-index: 201;
 }
 .modal-overlay.hidden .modal { transform: translateY(100%); }
 .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }

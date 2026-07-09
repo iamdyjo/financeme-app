@@ -68,7 +68,7 @@
       </div>
 
       <!-- FAB SCOS Add Habit / SCOS -->
-      <div class="card" style="background: var(--text-1); color: white; margin-top: 16px; margin-bottom: 32px; display: flex; align-items: center; justify-content: space-between; cursor: pointer;" onclick="document.getElementById('btn-fab').click();">
+      <div class="card" style="background: var(--text-1); color: white; margin-top: 16px; margin-bottom: 32px; display: flex; align-items: center; justify-content: space-between; cursor: pointer;" onclick="openModal('modal-fab');">
         <div style="display: flex; align-items: center; gap: 12px;">
           <div style="width: 40px; height: 40px; border-radius: 12px; background: var(--bg-base); display: flex; align-items: center; justify-content: center;">
             <i data-feather="activity" style="color: var(--text-1);"></i>
@@ -87,7 +87,7 @@
       <div class="card">
         <div class="card-header">
           <h3>Transaksi Terbaru</h3>
-          <a href="#" class="nav-link" data-page="transaksi" style="font-size: 14px; color: var(--text-3);" onclick="document.getElementById('btn-nav-trx').click(); return false;">Lihat semua</a>
+          <a href="#" style="font-size: 14px; color: var(--text-3);" onclick="goTo('transaksi'); return false;">Lihat semua</a>
         </div>
         <div id="recent-list"></div>
       </div>

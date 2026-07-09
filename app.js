@@ -794,10 +794,20 @@ function clearCache() {
 
 // ══ MODAL & THEME LOGIC ═══════════════════════════════════════
 function openModal(id) {
+  // Close any other open modals first
+  document.querySelectorAll('.modal-overlay:not(.hidden)').forEach(el => {
+    if (el.id !== id) el.classList.add('hidden');
+  });
   document.getElementById(id).classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  // Re-run feather icons after modal opens
+  setTimeout(updateIcons, 50);
 }
 function closeModal(id) {
   document.getElementById(id).classList.add('hidden');
+  // Re-enable scroll if no modals are open
+  const anyOpen = document.querySelectorAll('.modal-overlay:not(.hidden)').length > 0;
+  if (!anyOpen) document.body.style.overflow = '';
 }
 
 // Apply Theme
