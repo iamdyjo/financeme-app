@@ -10,6 +10,15 @@
   "orientation": "portrait-primary",
   "categories": ["finance", "productivity"],
   "lang": "id",
+  "dir": "ltr",
+  "display_override": ["standalone", "minimal-ui", "window-controls-overlay"],
+  "iarc_rating_id": "",
+  "related_applications": [],
+  "scope_extensions": [
+    {
+      "origin": "*.netlify.app"
+    }
+  ],
   "icons": [
     {
       "src": "icon-192.svg",
